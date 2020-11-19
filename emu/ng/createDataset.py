@@ -9,17 +9,19 @@ from ..io import mkdir
 
 class ngDataset(object):
     def __init__(self, volume_size = [1024,1024,100], \
-                 resolution = [6,6,30], chunk_size=[64,64,64], \
+                 resolution = [6,6,30], chunk_size=[64,64,64], offset = [0,0,0], \
                 mip_ratio = [[1,1,1],[2,2,1],[4,4,1],[8,8,1],[16,16,2],[32,32,4]]):
         # dimension order: x,y,z
         self.volume_size = volume_size
         self.resolution = resolution
         self.chunk_size = chunk_size
         self.mip_ratio = mip_ratio
+        self.offset = offset
 
     def createInfo(self, cloudpath = '', data_type = 'im'):
         from cloudvolume import CloudVolume
-        mkdir(cloudpath)
+        if 'file' == cloudpath[:4]:
+            mkdir(cloudpath[7:])
         num_mip_level = len(self.mip_ratio)
         if data_type == 'im':
             m_enc = 'jpeg'
@@ -40,7 +42,7 @@ class ngDataset(object):
                 "chunk_sizes"   : [tuple(self.chunk_size)], # units are voxels
                 "key"           : "_".join(map(str, m_res)),
                 "resolution"    : m_res, # units are voxels
-                "voxel_offset"  : [0,0,0], # units are voxels
+                "voxel_offset"  : self.offset, # units are voxels
                 "mesh"          : 'mesh', # compute mesh
                 "compressed_segmentation_block_size" : (8,8,8),
                 "size"          : [(self.volume_size[0] + m_ratio[0] - 1) // m_ratio[0], 
@@ -174,6 +176,8 @@ class ngDataset(object):
     def createMesh(self, cloudpath='', mip_level=0, volume_size=[256,256,100], num_thread = 1):
         from taskqueue import LocalTaskQueue
         import igneous.task_creation as tc
+        
+        tq = LocalTaskQueue(parallel = num_thread)
         tasks = tc.create_meshing_tasks(cloudpath, mip = mip_level, \
                                         shape = volume_size, mesh_dir='mesh',\
                                         dust_threshold=20,max_simplification_error=40)
@@ -185,10 +189,14 @@ class ngDataset(object):
         tq.insert(tasks)
         tq.execute()
 
-    def removeGz(self, cloudpath='', folder_key='_'):
+    def removeGz(self, cloudpath='', folder_key='_', do_copy = False):
         fns = [x for x in glob(cloudpath + '/*') if folder_key in x[x.rfind('/'):]]
         for fn in fns:
             print(fn)
             gzs = glob(fn + '/*.gz')
-            for gz in gzs:
-                shutil.move(gz, gz[:-3])
+            if do_copy:
+                for gz in gzs:
+                    shutil.copy(gz, gz[:-3])
+            else:
+                for gz in gzs:
+                    shutil.move(gz, gz[:-3])

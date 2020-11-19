@@ -1,5 +1,6 @@
 import os, sys
 import numpy as np
+import imageio
 
 def mkdir(fn,opt=0):
     if opt == 1 :# until the last /
@@ -10,8 +11,12 @@ def mkdir(fn,opt=0):
         else:
             os.mkdir(fn)
 
+def readImage(filename):
+    image = imageio.imread(filename)
+    return image
+
 # h5 files
-def readh5(filename, datasetname=None):
+def readH5(filename, datasetname=None):
     import h5py
     fid = h5py.File(filename,'r')
     if datasetname is None:
@@ -29,7 +34,7 @@ def readh5(filename, datasetname=None):
     else:
         return np.array(fid[datasetname])
 
-def writeh5(filename, dtarray, datasetname='main'):
+def writeH5(filename, dtarray, datasetname='main'):
     import h5py
     fid=h5py.File(filename,'w')
     if isinstance(datasetname, (list,)):
@@ -40,3 +45,22 @@ def writeh5(filename, dtarray, datasetname='main'):
         ds = fid.create_dataset(datasetname, dtarray.shape, compression="gzip", dtype=dtarray.dtype)
         ds[:] = dtarray
     fid.close()
+
+def readTxt(filename):
+    a= open(filename)
+    content = a.readlines()
+    a.close()
+    return content
+
+def writeTxt(filename, content):
+    a= open(filename,'w')
+    if isinstance(content, (list,)):
+        for ll in content:
+            a.write(ll)
+            if '\n' not in ll:
+                a.write('\n')
+    else:
+        a.write(content)
+    a.close()
+
+
