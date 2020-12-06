@@ -1,6 +1,5 @@
 import os, sys
 import numpy as np
-import imageio
 
 def mkdir(fn,opt=0):
     if opt == 1 :# until the last /
@@ -12,6 +11,7 @@ def mkdir(fn,opt=0):
             os.mkdir(fn)
 
 def readImage(filename):
+    import imageio
     image = imageio.imread(filename)
     return image
 

@@ -1,12 +1,12 @@
 import os,sys
 from scipy.ndimage import zoom
 import json
-import imageio
 from .io import readImage
 import numpy as np
 
 def readBfly(fns, z0, z1, y0, y1, x0, x1, tile_sz, tile_type = np.uint8,\
              tile_st = [0, 0], tile_ratio = 1, tile_resize_mode = 1):
+    import imageio
     if not isinstance(tile_sz, (list,)):
         tile_sz = [tile_sz, tile_sz]
     # [row,col]

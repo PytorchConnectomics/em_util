@@ -42,12 +42,10 @@ class ngDataset(object):
                 "chunk_sizes"   : [tuple(self.chunk_size)], # units are voxels
                 "key"           : "_".join(map(str, m_res)),
                 "resolution"    : m_res, # units are voxels
-                "voxel_offset"  : self.offset, # units are voxels
+                "voxel_offset"  : [(self.offset[x] + m_ratio[x] - 1) // m_ratio[x] for x in range(3)], 
                 "mesh"          : 'mesh', # compute mesh
                 "compressed_segmentation_block_size" : (8,8,8),
-                "size"          : [(self.volume_size[0] + m_ratio[0] - 1) // m_ratio[0], 
-                                   (self.volume_size[1] + m_ratio[1] - 1) // m_ratio[1], 
-                                   (self.volume_size[2] + m_ratio[2] - 1) // m_ratio[2] ]
+                "size"          : [(self.volume_size[x] + m_ratio[x] - 1) // m_ratio[x] for x in range(3)], 
             } 
         info = {
             "num_channels"  : 1,
@@ -59,7 +57,7 @@ class ngDataset(object):
         vol.commit_info()
 
     def createTile(self, getVolume, cloudpath = '', data_type = 'image', \
-                   mip_levels = None, tile_size = [512,512], offset = [0,0], num_thread = 1):
+                   mip_levels = None, tile_size = [512,512], offset = [0,0,0], num_thread = 1, do_subdir = False):
         from cloudvolume import CloudVolume
         if data_type == 'im':
             m_resize = 1
@@ -90,9 +88,11 @@ class ngDataset(object):
         m_zres  = [0   ] * num_mip_level # number of slices to skip
         for i in mip_levels:
             m_vols[i] = CloudVolume(cloudpath, mip=i, parallel= num_thread)
+            if do_subdir:
+                m_vols[i].meta.name_sep = '/'
             m_tszA[i] = [tile_size[j]//self.mip_ratio[i][j] for j in range(2)]
             m_szA[i]  = m_vols[i].info['scales'][i]['size']
-            m_osA[i]  = [offset[j]//self.mip_ratio[i][j] for j in range(2)]
+            m_osA[i]  = [offset[j]//self.mip_ratio[i][j] for j in range(3)]
             m_zres[i] = self.mip_ratio[i][-1]//self.mip_ratio[mip_levels[0]][-1]
             if i >= m_mip_id: 
                 # output whole section
@@ -113,9 +113,9 @@ class ngDataset(object):
         for z in range(num_chunk[2]):
             z0 = z * self.chunk_size[2]
             z1 = np.min([self.volume_size[2], (z+1) * self.chunk_size[2]])
-            print('do z-chunk: %d/%d' % (z, num_chunk[2]))
             for y in range(num_chunk[1]):
                 for x in range(num_chunk[0]):
+                    print('do chunk: %d/%d, %d/%d, %d/%d' % (z, num_chunk[2], y, num_chunk[1], x, num_chunk[0]))
                     # generate global coord
                     for i in mip_levels:
                         # add offset for axis-aligned write
@@ -154,14 +154,18 @@ class ngDataset(object):
                                 else: # piece into one slice
                                     m_tiles[i][x0[i]: x1[i], y0[i]: y1[i], zzl] = im[:x1[i]- x0[i], :y1[i]-y0[i], None]
                     # < mipI: write for each tile 
+                    # x/y each chunk
                     for i in [ii for ii in mip_levels if ii < m_mip_id]:
                         if z1 % (m_zres[i] * self.chunk_size[2]) == 0 or z == num_chunk[2] - 1:
                             z1g = (z1 + m_zres[i] - 1) // m_zres[i]
-                            z0g = z1g - self.chunk_size[2] // m_zres[i]
+                            z0g = z1g - self.chunk_size[2]
                             if z1 % (m_zres[i] * self.chunk_size[2]) != 0: # last unfilled chunk
                                 z0g = (z1g // self.chunk_size[2]) * self.chunk_size[2]
+                            # check volume align
+                            # in z: has to be 
                             m_vols[i][x0[i] : x1[i], \
-                                    y0[i] : y1[i], z0g : z1g, :] = m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :]
+                                y0[i] : y1[i], z0g + m_osA[i][2] : z1g + m_osA[i][2], :] = \
+                                m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :]
                             m_tiles[i][:] = 0
             # >= mipI: write for each secion
             for i in [ii for ii in mip_levels if ii >= m_mip_id]:
@@ -170,7 +174,10 @@ class ngDataset(object):
                     z0g = z1g - self.chunk_size[2]
                     if z1 % (m_zres[i] * self.chunk_size[2]) != 0: # last unfilled chunk
                         z0g = (z1g // self.chunk_size[2]) * self.chunk_size[2]
-                    m_vols[i][:, :, z0g : z1g, :] = m_tiles[i][:, :, : z1g - z0g, :]
+                    try:
+                        m_vols[i][:, :, z0g + m_osA[i][2] : z1g + m_osA[i][2], :] = m_tiles[i][:, :, : z1g - z0g, :]
+                    except:
+                        import pdb; pdb.set_trace()
                     m_tiles[i][:] = 0
 
     def createMesh(self, cloudpath='', mip_level=0, volume_size=[256,256,100], num_thread = 1):
@@ -189,14 +196,25 @@ class ngDataset(object):
         tq.insert(tasks)
         tq.execute()
 
-    def removeGz(self, cloudpath='', folder_key='_', do_copy = False):
+    def removeGz(self, cloudpath='', folder_key='_', option = 'copy'):
+        if 'file' == cloudpath[:4]:
+            cloudpath = cloudpath[7:]
         fns = [x for x in glob(cloudpath + '/*') if folder_key in x[x.rfind('/'):]]
         for fn in fns:
             print(fn)
             gzs = glob(fn + '/*.gz')
-            if do_copy:
+            if option == 'copy':
                 for gz in gzs:
-                    shutil.copy(gz, gz[:-3])
-            else:
+                    if not os.path.exists(gz[:-3]):
+                        shutil.copy(gz, gz[:-3])
+            elif option == 'move':
                 for gz in gzs:
                     shutil.move(gz, gz[:-3])
+            elif option == 'remove_orig':
+                for gz in gzs:
+                    os.remove(gz[:-3])
+            elif option == 'copy_subdir':
+                for gz in gzs:
+                    gz2 = gz[gz.rfind('/'):-3].split('_')
+                    mkdir(fn + gz2[0] + '/' + gz2[1], 2)
+                    shutil.copy(gz, fn + '/'.join(gz2))
