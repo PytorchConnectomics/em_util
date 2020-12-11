@@ -2,7 +2,7 @@ import os,sys
 import json
 from emu.ng import *
 from emu.io import readH5, readBfly
-
+# https://neuroglancer-demo.appspot.com/#!%7B"dimensions":%7B"x":%5B6e-9%2C"m"%5D%2C"y":%5B6e-9%2C"m"%5D%2C"z":%5B3e-8%2C"m"%5D%7D%2C"position":%5B366.92974853515625%2C524.85791015625%2C0.5%5D%2C"crossSectionScale":1.4161533536984332%2C"projectionOrientation":%5B-0.16182157397270203%2C0.2875177562236786%2C0.1989087462425232%2C0.9228123426437378%5D%2C"projectionScale":1024%2C"layers":%5B%7B"type":"image"%2C"source":"precomputed://https://rhoana.rc.fas.harvard.edu/ng/snemi_im_subdir"%2C"tab":"source"%2C"name":"snemi_im_subdir"%7D%2C%7B"type":"segmentation"%2C"source":"precomputed://https://rhoana.rc.fas.harvard.edu/ng/snemi_seg_subdir"%2C"tab":"source"%2C"name":"snemi_seg_subdir"%7D%5D%2C"selectedLayer":%7B"layer":"snemi_seg_subdir"%2C"visible":true%7D%2C"layout":"xy"%2C"partialViewport":%5B0%2C0%2C1%2C1%5D%7D
 
 DD='/n/pfister_lab2/Lab/public/ng/'
 Do = 'file://' + '/n/pfister_lab2/Lab/public/ng/'

@@ -18,7 +18,7 @@ class ngDataset(object):
         self.mip_ratio = mip_ratio
         self.offset = offset
 
-    def createInfo(self, cloudpath = '', data_type = 'im'):
+    def createInfo(self, cloudpath = '', data_type = 'im', num_channel = 1):
         from cloudvolume import CloudVolume
         if 'file' == cloudpath[:4]:
             mkdir(cloudpath[7:])
@@ -48,7 +48,7 @@ class ngDataset(object):
                 "size"          : [(self.volume_size[x] + m_ratio[x] - 1) // m_ratio[x] for x in range(3)], 
             } 
         info = {
-            "num_channels"  : 1,
+            "num_channels"  : num_channel,
             "type"          : m_type,
             "data_type"     : m_dtype, # Channel images might be 'uint8'
             "scales"        : scales,
@@ -57,7 +57,7 @@ class ngDataset(object):
         vol.commit_info()
 
     def createTile(self, getVolume, cloudpath = '', data_type = 'image', \
-                   mip_levels = None, tile_size = [512,512], offset = [0,0,0], num_thread = 1, do_subdir = False):
+                   mip_levels = None, tile_size = [512,512], offset = [0,0,0], num_thread = 1, do_subdir = False, num_channel = 3):
         from cloudvolume import CloudVolume
         if data_type == 'im':
             m_resize = 1
@@ -90,16 +90,16 @@ class ngDataset(object):
             m_vols[i] = CloudVolume(cloudpath, mip=i, parallel= num_thread)
             if do_subdir:
                 m_vols[i].meta.name_sep = '/'
-            m_tszA[i] = [tile_size[j]//self.mip_ratio[i][j] for j in range(2)]
+            m_tszA[i] = [tile_size[j]//self.mip_ratio[i][j] for j in range(2)] + [num_channel]
             m_szA[i]  = m_vols[i].info['scales'][i]['size']
             m_osA[i]  = [offset[j]//self.mip_ratio[i][j] for j in range(3)]
             m_zres[i] = self.mip_ratio[i][-1]//self.mip_ratio[mip_levels[0]][-1]
             if i >= m_mip_id: 
                 # output whole section
-                m_tiles[i] = np.zeros((m_szA[i][0], m_szA[i][1], self.chunk_size[2],1), dtype=m_dtype)
+                m_tiles[i] = np.zeros((m_szA[i][0], m_szA[i][1], self.chunk_size[2], num_channel), dtype=m_dtype)
             else: 
                 # output in tiles
-                m_tiles[i] = np.zeros((m_tszA[i][0], m_tszA[i][1], self.chunk_size[2],1), dtype=m_dtype)
+                m_tiles[i] = np.zeros((m_tszA[i][0], m_tszA[i][1], self.chunk_size[2], num_channel), dtype=m_dtype)
 
         # tile for the finest level
         x0   = [None] * num_mip_level
@@ -130,7 +130,10 @@ class ngDataset(object):
                                     x0[mip_levels[0]], x1[mip_levels[0]])
                     
                     for zz in range(z0,z1):
-                        im = ims[zz-z0].transpose((1,0))
+                        if ims[0].ndim == 2:
+                            im = ims[zz-z0].transpose((1,0))
+                        else:
+                            im = ims[zz-z0].transpose((1,0,2))
                         sz0 = im.shape
                         # in case the output is not padded for invalid regions
                         full_size_tile = (sz0[0] == m_tszA[0][0])*(sz0[1] == m_tszA[0][1]) 
@@ -141,18 +144,26 @@ class ngDataset(object):
                             if full_size_tile:
                                 #im = cv2.resize(im.astype(np.float32), tuple(tszA[i]), m_resize).astype(m_dtype)
                                 sz_r = m_tszA[i] / np.array(sz0)
+                                sz_im = m_tszA[i]
+                            else:
+                                tszA_t = [x1[i]-x0[i], y1[i]-y0[i], num_channel]
+                                sz_r = tszA_t / np.array(sz0)
+                                sz_im = tszA_t
+                            if im.ndim == 2:
                                 im = zoom(im, sz_r, order=m_resize)
                             else:
-                                tszA_t = [x1[i]-x0[i], y1[i]-y0[i]]
-                                sz_r = tszA_t / np.array(sz0)
-                                im = zoom(im, sz_r, order=m_resize)
+                                im0 = im.copy()
+                                im = np.zeros(sz_im, im.dtype)
+                                for c in range(im.shape[-1]): 
+                                    im[:,:,c] = zoom(im0[:,:,c], sz_r[:2], order=m_resize)
+
 
                             if (zz) % m_zres[i] == 0: # read image
                                 zzl = (zz // m_zres[i]) % (self.chunk_size[2])
                                 if i < m_mip_id: # whole tile 
-                                    m_tiles[i][:im.shape[0], :im.shape[1], zzl] = im[:, :, None]
+                                    m_tiles[i][:im.shape[0], :im.shape[1], zzl] = im.reshape(m_tiles[i][:im.shape[0], :im.shape[1], zzl].shape)
                                 else: # piece into one slice
-                                    m_tiles[i][x0[i]: x1[i], y0[i]: y1[i], zzl] = im[:x1[i]- x0[i], :y1[i]-y0[i], None]
+                                    m_tiles[i][x0[i]: x1[i], y0[i]: y1[i], zzl] = im[:x1[i]- x0[i], :y1[i]-y0[i]].reshape(m_tiles[i][x0[i]: x1[i], y0[i]: y1[i], zzl].shape)
                     # < mipI: write for each tile 
                     # x/y each chunk
                     for i in [ii for ii in mip_levels if ii < m_mip_id]:
