@@ -18,7 +18,7 @@ class ngDataset(object):
         self.mip_ratio = mip_ratio
         self.offset = offset
 
-    def createInfo(self, cloudpath = '', data_type = 'im', num_channel = 1):
+    def createInfo(self, cloudpath = '', data_type = 'im', num_channel = 1, skel_radius=2):
         from cloudvolume import CloudVolume
         if 'file' == cloudpath[:4]:
             mkdir(cloudpath[7:])
@@ -29,6 +29,10 @@ class ngDataset(object):
             m_dtype = 'uint8'
         elif data_type == 'seg':
             m_enc = 'compressed_segmentation'
+            m_type = 'segmentation'
+            m_dtype = 'uint32'
+        elif data_type == 'skel':
+            m_enc = 'raw'
             m_type = 'segmentation'
             m_dtype = 'uint32'
 
@@ -44,6 +48,7 @@ class ngDataset(object):
                 "resolution"    : m_res, # units are voxels
                 "voxel_offset"  : [(self.offset[x] + m_ratio[x] - 1) // m_ratio[x] for x in range(3)], 
                 "mesh"          : 'mesh', # compute mesh
+                "skeletons"     : 'skeletons', # compute mesh
                 "compressed_segmentation_block_size" : (8,8,8),
                 "size"          : [(self.volume_size[x] + m_ratio[x] - 1) // m_ratio[x] for x in range(3)], 
             } 
@@ -57,7 +62,7 @@ class ngDataset(object):
         vol.commit_info()
 
     def createTile(self, getVolume, cloudpath = '', data_type = 'image', \
-                   mip_levels = None, tile_size = [512,512], offset = [0,0,0], num_thread = 1, do_subdir = False, num_channel = 3):
+                   mip_levels = None, tile_size = [512,512], offset = [0,0,0], num_thread = 1, do_subdir = False, num_channel = 1):
         from cloudvolume import CloudVolume
         if data_type == 'im':
             m_resize = 1
@@ -143,11 +148,11 @@ class ngDataset(object):
                             sz0 = im.shape
                             if full_size_tile:
                                 #im = cv2.resize(im.astype(np.float32), tuple(tszA[i]), m_resize).astype(m_dtype)
-                                sz_r = m_tszA[i] / np.array(sz0)
+                                sz_r = m_tszA[i][:len(sz0)] / np.array(sz0)
                                 sz_im = m_tszA[i]
                             else:
                                 tszA_t = [x1[i]-x0[i], y1[i]-y0[i], num_channel]
-                                sz_r = tszA_t / np.array(sz0)
+                                sz_r = tszA_t[:len(sz0)] / np.array(sz0)
                                 sz_im = tszA_t
                             if im.ndim == 2:
                                 im = zoom(im, sz_r, order=m_resize)
