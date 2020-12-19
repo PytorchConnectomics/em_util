@@ -3,10 +3,10 @@ from scipy.ndimage import zoom
 import json
 from .io import readImage
 import numpy as np
+import json
 
 def readBfly(fns, z0, z1, y0, y1, x0, x1, tile_sz, tile_type = np.uint8,\
              tile_st = [0, 0], tile_ratio = 1, tile_resize_mode = 1):
-    import imageio
     if not isinstance(tile_sz, (list,)):
         tile_sz = [tile_sz, tile_sz]
     # [row,col]
@@ -49,22 +49,21 @@ def readBfly(fns, z0, z1, y0, y1, x0, x1, tile_sz, tile_type = np.uint8,\
                         import pdb; pdb.set_trace()
     return result
 
-def writeBfly(sz, numT, imN, tsz=1024, tile_st=[0,0],zPad=[0,0], image_id=None, out_name=None,st=0,ndim=1):
+def writeBfly(sz, numT, imN, tsz=1024, tile_st=[0,0],zPad=[0,0], im_id=None, outName=None,st=0,ndim=1,rsz=1,dt='uint8'):
     # one tile for each section
-    dim={'depth':sz[0]+sum(zPad), 'height':sz[1], 'width':sz[2], "tile_st":tile_st,
-         'dtype':'uint8', 'n_columns':numT[1], 'n_rows':numT[0], "tile_size":tsz, 'ndim':ndim}
     # st: starting index
-    if image_id is None:
-        image_id = list(range(zPad[0]+st,st,-1)) + list(range(st,sz[0]+st)) + list(range(sz[0]-2+st,sz[0]-zPad[1]-2+st,-1))
+    if im_id is None:
+        im_id = range(zPad[0]+st,st,-1)+range(st,sz[0]+st)+range(sz[0]-2+st,sz[0]-zPad[1]-2+st,-1)
     else: # st=0
         if zPad[0]>0:
-            image_id = [image_id[x] for x in range(zPad[0],0,-1)] + image_id
+            im_id = [im_id[x] for x in range(zPad[0],0,-1)]+im_id
         if zPad[1]>0:
-            image_id += [image_id[x] for x in range(sz[0]-2,sz[0]-zPad[1]-2,-1)]
-    sec=[imN(x) for x in image_id]
-    out={'sections':sec, 'dimensions':dim}
-    if out_name is None:
+            im_id += [im_id[x] for x in range(sz[0]-2,sz[0]-zPad[1]-2,-1)]
+    sec=[imN(x) for x in im_id]
+    out={'image':sec, 'depth':sz[0]+sum(zPad), 'height':sz[1], 'width':sz[2], "tile_st":tile_st,
+         'dtype':dt, 'n_columns':numT[1], 'n_rows':numT[0], "tile_size":tsz, 'ndim':ndim, 'tile_ratio':rsz}
+    if outName is None:
         return out
     else:
-        with open(out_name,'w') as fid:
+        with open(outName,'w') as fid:
             json.dump(out, fid)
