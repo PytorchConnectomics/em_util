@@ -5,7 +5,7 @@ from .io import readImage
 import numpy as np
 import json
 
-def readBfly(fns, z0, z1, y0, y1, x0, x1, tile_sz, tile_type = np.uint8,\
+def readTileVolume(fns, z0, z1, y0, y1, x0, x1, tile_sz, tile_type = np.uint8,\
              tile_st = [0, 0], tile_ratio = 1, tile_resize_mode = 1):
     if not isinstance(tile_sz, (list,)):
         tile_sz = [tile_sz, tile_sz]
@@ -49,7 +49,7 @@ def readBfly(fns, z0, z1, y0, y1, x0, x1, tile_sz, tile_type = np.uint8,\
                         import pdb; pdb.set_trace()
     return result
 
-def writeBfly(sz, numT, imN, tsz=1024, tile_st=[0,0],zPad=[0,0], im_id=None, outName=None,st=0,ndim=1,rsz=1,dt='uint8'):
+def writeTileInfo(sz, numT, imN, tsz=1024, tile_st=[0,0],zPad=[0,0], im_id=None, outName=None,st=0,ndim=1,rsz=1,dt='uint8'):
     # one tile for each section
     # st: starting index
     if im_id is None:
