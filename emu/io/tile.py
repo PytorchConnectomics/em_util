@@ -2,11 +2,12 @@ import os,sys
 from scipy.ndimage import zoom
 import json
 from .io import readImage
+from .seg import vastToSeg
 import numpy as np
 import json
 
 def readTileVolume(fns, z0, z1, y0, y1, x0, x1, tile_sz, tile_type = np.uint8,\
-             tile_st = [0, 0], tile_ratio = 1, tile_resize_mode = 1):
+             tile_st = [0, 0], tile_ratio = 1, tile_resize_mode = 1, tile_seg = False):
     if not isinstance(tile_sz, (list,)):
         tile_sz = [tile_sz, tile_sz]
     # [row,col]
@@ -32,6 +33,8 @@ def readTileVolume(fns, z0, z1, y0, y1, x0, x1, tile_sz, tile_type = np.uint8,\
                     patch = readImage(filename)
                     if tile_ratio != 1:
                         patch = zoom(patch, tile_ratio, tile_resize_mode)
+                    if tile_seg:
+                        patch = vastToSeg(patch)
                     # exception: last tile may not have the right size
                     psz = patch.shape
                     xp0 = column * tile_sz[1]

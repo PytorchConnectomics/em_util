@@ -132,3 +132,4 @@ dmypy.json
 .*swo
 T_slurm.py
 db/
+*~
