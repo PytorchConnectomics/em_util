@@ -5,7 +5,7 @@ import shutil
 import numpy as np
 from scipy.ndimage import zoom
 
-from ..io import mkdir
+from ..io import mkdir,writeTxt
 
 class ngDataset(object):
     def __init__(self, volume_size = [1024,1024,100], \
@@ -73,6 +73,9 @@ class ngDataset(object):
         else:
             raise ValueError('Unrecognized data type: ', data_type)
 
+        # write .htaccess
+        self.writeHtaccess(cloudpath[6:] + '/.htaccess', data_type, do_subdir)
+
         # setup cloudvolume writer
         num_mip_level = len(self.mip_ratio)
         if mip_levels is None:
@@ -112,8 +115,8 @@ class ngDataset(object):
         y0   = [None] * num_mip_level
         y1   = [None] * num_mip_level
       
-        num_chunk = [(self.volume_size[x] + m_tszA[mip_levels[0]][x]-1) // m_tszA[mip_levels[0]][x] for x in range(2)]
-        num_chunk += [(self.volume_size[2] + self.chunk_size[2]-1) // self.chunk_size[2]]
+        num_chunk = [(m_szA[mip_levels[0]][x] + m_tszA[mip_levels[0]][x]-1) // m_tszA[mip_levels[0]][x] for x in range(2)]
+        num_chunk += [(m_szA[mip_levels[0]][2] + self.chunk_size[2]-1) // self.chunk_size[2]]
 
         for z in range(num_chunk[2]):
             z0 = z * self.chunk_size[2]
@@ -196,14 +199,15 @@ class ngDataset(object):
                         import pdb; pdb.set_trace()
                     m_tiles[i][:] = 0
 
-    def createMesh(self, cloudpath='', mip_level=0, volume_size=[256,256,100], num_thread = 1):
+    def createMesh(self, cloudpath='', mip_level=0, volume_size=[256,256,100], \
+                   num_thread = 1, dust_threshold = None, do_subdir = False):
         from taskqueue import LocalTaskQueue
         import igneous.task_creation as tc
         
         tq = LocalTaskQueue(parallel = num_thread)
         tasks = tc.create_meshing_tasks(cloudpath, mip = mip_level, \
-                                        shape = volume_size, mesh_dir='mesh',\
-                                        dust_threshold=20,max_simplification_error=40)
+                                        shape = volume_size, mesh_dir = 'mesh',\
+                                        dust_threshold = 20, max_simplification_error = 40, do_subdir = do_subdir)
         tq.insert(tasks)
         tq.execute()
 
@@ -212,7 +216,52 @@ class ngDataset(object):
         tq.insert(tasks)
         tq.execute()
 
+    def writeHtaccess(self, output_file, data_type = 'im', do_subdir = False):
+        out = """# If you get a 403 Forbidden error, try to comment out the Options directives
+        # below (they may be disallowed by your server's AllowOverride setting).
+
+        #<IfModule headers_module>
+            # Needed to use the data from a Neuroglancer instance served from a
+            # different server (see http://enable-cors.org/server_apache.html).
+        #    Header set Access-Control-Allow-Origin "*"
+        #</IfModule>
+
+        # Data chunks are stored in sub-directories, in order to avoid having
+        # directories with millions of entries. Therefore we need to rewrite URLs
+        # because Neuroglancer expects a flat layout.
+        #Options FollowSymLinks
+        """
+        if do_subdir:
+            out+= """RewriteEngine On
+        RewriteRule "^(.*)/([0-9]+-[0-9]+)_([0-9]+-[0-9]+)_([0-9]+-[0-9]+)$" "$1/$2/$3/$4"
+        """
+        
+        """
+        # Microsoft filesystems do not support colons in file names, but pre-computed
+        # meshes use a colon in the URI (e.g. 100:0). As :0 is the most common (only?)
+        # suffix in use, we will serve a file that has this suffix stripped.
+        #RewriteCond "%{REQUEST_FILENAME}" !-f
+        #RewriteRule "^(.*):0$" "$1"
+        """
+
+        if data_type == 'seg':
+            out += """<IfModule mime_module>
+            # Allow serving pre-compressed files, which can save a lot of space for raw
+            # chunks, compressed segmentation chunks, and mesh chunks.
+            #
+            # The AddType directive should in theory be replaced by a "RemoveType .gz"
+            # directive, but with that configuration Apache fails to serve the
+            # pre-compressed chunks (confirmed with Debian version 2.2.22-13+deb7u6).
+            # Fixes welcome.
+            # Options Multiviews
+            AddEncoding x-gzip .gz
+            AddType application/octet-stream .gz
+        </IfModule>
+        """
+        writeTxt(output_file, out)
+
     def removeGz(self, cloudpath='', folder_key='_', option = 'copy'):
+        # utility function
         if 'file' == cloudpath[:4]:
             cloudpath = cloudpath[7:]
         fns = [x for x in glob(cloudpath + '/*') if folder_key in x[x.rfind('/'):]]
