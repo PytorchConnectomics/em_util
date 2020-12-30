@@ -31,10 +31,10 @@ def readTileVolume(fns, z0, z1, y0, y1, x0, x1, tile_sz, tile_type = np.uint8,\
                     filename = pattern
                 if os.path.exists(filename):
                     patch = readImage(filename)
-                    if tile_ratio != 1:
-                        patch = zoom(patch, tile_ratio, tile_resize_mode)
                     if tile_seg:
                         patch = vastToSeg(patch)
+                    if tile_ratio != 1:
+                        patch = zoom(patch, tile_ratio, order = tile_resize_mode)
                     # exception: last tile may not have the right size
                     psz = patch.shape
                     xp0 = column * tile_sz[1]
