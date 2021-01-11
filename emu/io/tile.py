@@ -50,6 +50,8 @@ def readTileVolume(fns, z0, z1, y0, y1, x0, x1, tile_sz, tile_type = np.uint8,\
                         result[z-z0, y0a-y0:y1a-y0, x0a-x0:x1a-x0] = patch[y0a-yp0:y1a-yp0, x0a-xp0:x1a-xp0]
                     except:
                         import pdb; pdb.set_trace()
+                else:
+                    print('Non-exist: %s'%filename)
     return result
 
 def writeTileInfo(sz, numT, imN, tsz=1024, tile_st=[0,0],zPad=[0,0], im_id=None, outName=None,st=0,ndim=1,rsz=1,dt='uint8'):

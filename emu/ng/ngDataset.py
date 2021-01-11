@@ -114,13 +114,17 @@ class ngDataset(object):
         x1   = [None] * num_mip_level
         y0   = [None] * num_mip_level
         y1   = [None] * num_mip_level
-      
+        
+        # num of chunk: x and y
         num_chunk = [(m_szA[mip_levels[0]][x] + m_tszA[mip_levels[0]][x]-1) // m_tszA[mip_levels[0]][x] for x in range(2)]
-        num_chunk += [(m_szA[mip_levels[0]][2] + self.chunk_size[2]-1) // self.chunk_size[2]]
+        # num of chunk: z
+        # so that the tile-based mip-levels can output tiles
+        num_ztile = self.mip_ratio[m_mip_id-1][2]*self.chunk_size[2]
+        num_chunk += [(m_szA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
 
         for z in range(num_chunk[2]):
-            z0 = z * self.chunk_size[2]
-            z1 = np.min([self.volume_size[2], (z+1) * self.chunk_size[2]])
+            z0 = z * num_ztile
+            z1 = np.min([self.volume_size[2], (z+1) * num_ztile])
             for y in range(num_chunk[1]):
                 for x in range(num_chunk[0]):
                     print('do chunk: %d/%d, %d/%d, %d/%d' % (z, num_chunk[2], y, num_chunk[1], x, num_chunk[0]))
@@ -165,27 +169,29 @@ class ngDataset(object):
                                 for c in range(im.shape[-1]): 
                                     im[:,:,c] = zoom(im0[:,:,c], sz_r[:2], order=m_resize)
 
-
-                            if (zz) % m_zres[i] == 0: # read image
+                            # save image into tiles
+                            if (zz) % m_zres[i] == 0:
                                 zzl = (zz // m_zres[i]) % (self.chunk_size[2])
                                 if i < m_mip_id: # whole tile 
                                     m_tiles[i][:im.shape[0], :im.shape[1], zzl] = im.reshape(m_tiles[i][:im.shape[0], :im.shape[1], zzl].shape)
                                 else: # piece into one slice
                                     m_tiles[i][x0[i]: x1[i], y0[i]: y1[i], zzl] = im[:x1[i]- x0[i], :y1[i]-y0[i]].reshape(m_tiles[i][x0[i]: x1[i], y0[i]: y1[i], zzl].shape)
-                    # < mipI: write for each tile 
-                    # x/y each chunk
-                    for i in [ii for ii in mip_levels if ii < m_mip_id]:
-                        if z1 % (m_zres[i] * self.chunk_size[2]) == 0 or z == num_chunk[2] - 1:
-                            z1g = (z1 + m_zres[i] - 1) // m_zres[i]
-                            z0g = z1g - self.chunk_size[2]
-                            if z1 % (m_zres[i] * self.chunk_size[2]) != 0: # last unfilled chunk
-                                z0g = (z1g // self.chunk_size[2]) * self.chunk_size[2]
-                            # check volume align
-                            # in z: has to be 
-                            m_vols[i][x0[i] : x1[i], \
-                                y0[i] : y1[i], z0g + m_osA[i][2] : z1g + m_osA[i][2], :] = \
-                                m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :]
-                            m_tiles[i][:] = 0
+                        # < mipI: write for each tile 
+                        # save tile into cloudvolume
+                        for i in [ii for ii in mip_levels if ii < m_mip_id]:
+                            # chunk filled or last image
+                            if (zz+1) % (m_zres[i] * self.chunk_size[2]) == 0 or (z == num_chunk[2] - 1) * (zz == z1 - 1):
+                                z1g = (z1 + m_zres[i] - 1) // m_zres[i]
+                                z0g = z1g - self.chunk_size[2]
+                                if z1 % (m_zres[i] * self.chunk_size[2]) != 0: # last unfilled chunk
+                                    z0g = (z1g // self.chunk_size[2]) * self.chunk_size[2]
+                                # check volume align
+                                # in z: has to be 
+                                m_vols[i][x0[i] : x1[i], \
+                                    y0[i] : y1[i], z0g + m_osA[i][2] : z1g + m_osA[i][2], :] = \
+                                    m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :]
+                                m_tiles[i][:] = 0
+                                print(i,zz)
             # >= mipI: write for each secion
             for i in [ii for ii in mip_levels if ii >= m_mip_id]:
                 if z1 % (m_zres[i] * self.chunk_size[2]) == 0 or z == num_chunk[2] - 1:
