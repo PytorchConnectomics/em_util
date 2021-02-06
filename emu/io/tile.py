@@ -2,7 +2,7 @@ import os,sys
 from scipy.ndimage import zoom
 import json
 from .io import readImage
-from .seg import vastToSeg
+from .seg import rgbToSeg
 import numpy as np
 import json
 
@@ -45,7 +45,7 @@ def readTileVolume(fns, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_type = np.ui
                 if os.path.exists(filename):
                     patch = readImage(filename)
                     if tile_seg:
-                        patch = vastToSeg(patch)
+                        patch = rgbToSeg(patch)
                     if tile_ratio != 1:
                         patch = zoom(patch, tile_ratio, order = tile_resize_mode)
                     # exception: last tile may not have the right size

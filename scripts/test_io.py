@@ -3,7 +3,7 @@ from emu.io import *
 
 
 def test_bfly():
-    Di = '//n/boslfs/LABS/lichtman_lab/aligned_datasets/Moritz_L4_2019/'
+    Di = '/n/boslfs/LABS/lichtman_lab/aligned_datasets/Moritz_L4_2019/'
     out_name = Di + 'em/im.json'
 
     volume_size = [3306, 1024*9, 1024*6]

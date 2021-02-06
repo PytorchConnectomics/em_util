@@ -69,11 +69,21 @@ def segRelabel(seg, uid=None,nid=None,do_sort=False,do_type=False):
     seg[seg>=mid] = 0
     return mapping[seg]
 
-def segToVast(seg):
+def segBiggest(seg):
+    from skimage.measure import label
+    mask = label(seg)
+    ui, uc = np.unique(mask, return_counts=True)
+    uc[ui == 0] = 0
+    mid = ui[np.argmax(uc)]
+    seg[mask != mid] = 0
+    return seg
+
+
+def segToRgb(seg):
     # convert to 24 bits
     return np.stack([seg//65536, seg//256, seg%256],axis=2).astype(np.uint8)
 
-def vastToSeg(seg):
+def rgbToSeg(seg):
     # convert to 24 bits
     if seg.ndim==2 or seg.shape[-1]==1:
         return np.squeeze(seg)
