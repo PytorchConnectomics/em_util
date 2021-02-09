@@ -63,4 +63,16 @@ def writeTxt(filename, content):
         a.write(content)
     a.close()
 
-
+def writeGif(outname, filenames, ratio=1, duration=0.5):
+    import imageio
+    from scipy.ndimage import zoom
+    out = [None]*len(filenames)
+    for fid,filename in enumerate(filenames):
+        image = imageio.imread(filename)
+        if ratio!=1:
+            if image.ndim==2:
+                image = zoom(image, ratio, order=1)
+            else:
+                image = np.stack([zoom(image[:,:,d], ratio, order=1) for d in range(3)],axis=2)
+        out[fid] = image
+    imageio.mimsave(outname, out, 'GIF', duration=duration)
