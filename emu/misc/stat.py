@@ -1,7 +1,6 @@
 from scipy.ndimage.morphology import binary_erosion
 import numpy as np
 
-
 def getQueryCount(ui,uc,qid, mm = 0):
     # memory efficient
     # mm: ignore value
@@ -24,6 +23,7 @@ def getSphericity(seg):
     sid2, vol2 = np.unique(seg_erode * seg, return_counts = True)
     vol_erode = getQueryCount(sid2, vol2, sid)
     vol_diff = vol - vol_erode
+    vol_diff[sid==0] = 0
     sphe = - np.ones(vol.shape)
     sphe[vol_diff>0] = (np.pi**(1./3)*((6*vol[vol_diff>0])**(2./3)))/vol_diff[vol_diff>0]
-    return sphe
+    return sid, sphe, vol
