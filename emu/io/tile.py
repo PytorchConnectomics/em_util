@@ -46,7 +46,7 @@ def readTileVolume(fns, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_type = np.ui
                     patch = readImage(filename)
                     if tile_seg:
                         patch = rgbToSeg(patch)
-                    if tile_ratio != 1:
+                    if tile_ratio[0] != 1:
                         patch = zoom(patch, tile_ratio, order = tile_resize_mode)
                     # exception: last tile may not have the right size
                     psz = patch.shape
