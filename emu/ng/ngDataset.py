@@ -116,7 +116,7 @@ class ngDataset(object):
         y1   = [None] * num_mip_level
         
         # num of chunk: x and y
-        num_chunk = [(m_szA[mip_levels[0]][x] + m_tszA[mip_levels[0]][x]-1) // m_tszA[mip_levels[0]][x] for x in range(2)]
+        num_chunk = [(m_szA[mip_levels[0]][x] - m_osA[mip_levels[0]][x] + m_tszA[mip_levels[0]][x]-1) // m_tszA[mip_levels[0]][x] for x in range(2)]
         # num of chunk: z
         # so that the tile-based mip-levels can output tiles
         num_ztile = self.mip_ratio[m_mip_id-1][2]*self.chunk_size[2]
@@ -142,7 +142,7 @@ class ngDataset(object):
                                     x0[mip_levels[0]], x1[mip_levels[0]])
                     
                     for zz in range(z0,z1):
-                        zz_o = zz - m_osA[i][2]
+                        zz_o = zz - m_osA[mip_levels[0]][2]
                         if ims[0].ndim == 2:
                             im = ims[zz-z0].transpose((1,0))
                         else:
