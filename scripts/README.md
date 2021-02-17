@@ -12,3 +12,18 @@ Neuroglancer script (`test_ng.py`)
     - add a tab and enter: `precomputed://https://SERVER_NAME/FOLDER_NAME/snemi_im/` in the data source for images
     - add a tab and enter: `precomputed://https://SERVER_NAME/FOLDER_NAME/snemi_seg/` in the data source for segmentation
 
+Skeleton script (`test_skel.py`)
+---
+## Skelton Length Computation
+- `python test_skel.py 0 PATH_SKEL_PICKLE_FILE
+
+## ERL Evaluation
+- install [funlib.evaluate](https://github.com/funkelab/funlib.evaluate)
+```
+conda env create -n erl-eval
+source activate erl-eval
+conda install -c conda-forge -c ostrokach-forge -c pkgw-forge graph-tool
+pip install -r requirements.txt
+pip install --editable .
+```
+- `python test_skel.py 1 PATH_SKEL_PICKLE_FILE PATH_SEGMENT_H5_FILE`
