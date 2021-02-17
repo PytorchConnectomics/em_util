@@ -125,7 +125,7 @@ class ngDataset(object):
 
         for z in range(num_chunk[2]):
             z0 = z * num_ztile + m_osA[mip_levels[0]][2]
-            z1 = np.min([self.volume_size[2], (z+1) * num_ztile + m_osA[mip_levels[0]][2]])
+            z1 = np.min([self.volume_size[2], (z+1) * num_ztile) + m_osA[mip_levels[0]][2]]
             for y in range(num_chunk[1]):
                 for x in range(num_chunk[0]):
                     print('do chunk: %d/%d, %d/%d, %d/%d' % (z, num_chunk[2], y, num_chunk[1], x, num_chunk[0]))
@@ -133,9 +133,9 @@ class ngDataset(object):
                     for i in mip_levels:
                         # add offset for axis-aligned write
                         x0[i] = m_osA[i][0] + x * m_tszA[i][0]
-                        x1[i] = min(x0[i] + m_tszA[i][0], m_szA[i][0])
+                        x1[i] = min(x0[i] + m_tszA[i][0], m_osA[i][0] +m_szA[i][0])
                         y0[i] = m_osA[i][1] + y * m_tszA[i][1]
-                        y1[i] = min(y0[i] + m_tszA[i][1], m_szA[i][1])
+                        y1[i] = min(y0[i] + m_tszA[i][1], m_osA[i][1] +m_szA[i][1])
                     # read tiles
                     # input/output dimension order: z,y,x 
                     ims = getVolume(z0, z1, \
@@ -177,7 +177,9 @@ class ngDataset(object):
                                 if i < m_mip_id: # whole tile 
                                     m_tiles[i][:im.shape[0], :im.shape[1], zzl] = im.reshape(m_tiles[i][:im.shape[0], :im.shape[1], zzl].shape)
                                 else: # piece into one slice
-                                    m_tiles[i][x0[i]: x1[i], y0[i]: y1[i], zzl] = im[:x1[i]- x0[i], :y1[i]-y0[i]].reshape(m_tiles[i][x0[i]: x1[i], y0[i]: y1[i], zzl].shape)
+                                    tmp = m_tiles[i][(x0[i]-m_osA[i][0]): (x1[i]-m_osA[i][0]), \
+                                               (y0[i]-m_osA[i][1]): (y1[i]-m_osA[i][1]), zzl]
+                                    tmp[:] = im[:(x1[i]-x0[i]), :(y1[i]-y0[i])].reshape(tmp.shape)
                         # < mipI: write for each tile 
                         # save tile into cloudvolume
                         for i in [ii for ii in mip_levels if ii < m_mip_id]:
