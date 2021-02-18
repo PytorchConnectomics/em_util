@@ -1,11 +1,10 @@
 import os, sys
-import numpy as np
 from distutils.sysconfig import get_python_inc
 from setuptools import setup, Extension, find_packages
 
 def getInclude():
     dirName = get_python_inc()
-    return [dirName, os.path.dirname(dirName), np.get_include()]
+    return [dirName, os.path.dirname(dirName)]
 
 def setup_package():
     __version__ = '0.1'
@@ -17,7 +16,7 @@ def setup_package():
         url=url,
         license='MIT',
         author='Donglai Wei',
-        install_requires=['scipy','numpy'],
+        install_requires=['scipy','numpy','networkx','h5py','imageio'],
         include_dirs=getInclude(), 
         packages=find_packages(),
     )

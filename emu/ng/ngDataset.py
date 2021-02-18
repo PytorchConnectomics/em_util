@@ -125,7 +125,7 @@ class ngDataset(object):
 
         for z in range(num_chunk[2]):
             z0 = z * num_ztile + m_osA[mip_levels[0]][2]
-            z1 = np.min([self.volume_size[2], (z+1) * num_ztile) + m_osA[mip_levels[0]][2]]
+            z1 = min(self.volume_size[2], (z+1) * num_ztile) + m_osA[mip_levels[0]][2]
             for y in range(num_chunk[1]):
                 for x in range(num_chunk[0]):
                     print('do chunk: %d/%d, %d/%d, %d/%d' % (z, num_chunk[2], y, num_chunk[1], x, num_chunk[0]))
