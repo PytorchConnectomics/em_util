@@ -36,8 +36,7 @@ def test_snemi(option = 0):
             return seg[z0 : z1, y0 : y1, x0 : x1]
         dst.createTile(get_seg, output_seg, 'seg', range(len(mip_ratio)), do_subdir = do_subdir)
     elif option == '0.2': # igneous env: make 3D meshes
-        dst.createMesh(output_seg, 2, [256,256,100], 1)
-        #dst.removeGz(output_seg, 'mesh', True)
+        dst.createMesh(output_seg, 2, [256,256,100], 1, do_subdir = do_subdir)
 
 def test_display():
     Dd = 'https://neuroglancer-demo.appspot.com/#!%7B%22dimensions%22:%7B%22x%22:%5B6e-9%2C%22m%22%5D%2C%22y%22:%5B6e-9%2C%22m%22%5D%2C%22z%22:%5B3e-8%2C%22m%22%5D%7D%2C%22position%22:%5B520.8900756835938%2C534.8792114257812%2C99.3448257446289%5D%2C%22crossSectionScale%22:2.4102014483296315%2C%22projectionOrientation%22:%5B-0.0809287503361702%2C-0.9027095437049866%2C0.42252880334854126%2C-0.005954462569206953%5D%2C%22projectionScale%22:2325.6896087769196%2C%22layers%22:%5B%7B%22type%22:%22image%22%2C%22source%22:%22precomputed://https://rhoana.rc.fas.harvard.edu/ng/snemi_im%22%2C%22tab%22:%22source%22%2C%22name%22:%22snemi%22%7D%2C%7B%22type%22:%22segmentation%22%2C%22source%22:%22precomputed://https://rhoana.rc.fas.harvard.edu/ng/snemi_seg%22%2C%22tab%22:%22segments%22%2C%22colorSeed%22:2223730652%2C%22segmentQuery%22:%222%22%2C%22name%22:%22snemi_seg%22%7D%5D%2C%22showSlices%22:false%2C%22selectedLayer%22:%7B%22layer%22:%22snemi_seg%22%2C%22visible%22:true%7D%2C%22layout%22:%224panel%22%7D'
