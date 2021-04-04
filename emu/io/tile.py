@@ -39,7 +39,7 @@ def readTileVolume(fns, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_type = np.ui
                 if '%' in pattern:
                     filename = pattern % (row + tile_st[0], column + tile_st[1])
                 elif '{' in pattern:
-                    filename = pattern.format(row + tile_st[0], column + tile_st[1])
+                    filename = pattern.format(row=row + tile_st[0], column=column + tile_st[1])
                 else:
                     filename = pattern
                 if os.path.exists(filename):
