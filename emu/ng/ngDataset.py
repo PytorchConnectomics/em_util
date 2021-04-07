@@ -185,7 +185,8 @@ class ngDataset(object):
                         for i in [ii for ii in mip_levels if ii < m_mip_id]:
                             # chunk filled or last image
                             if (zz_o + 1) % (m_zres[i] * self.chunk_size[2]) == 0 or (z == num_chunk[2] - 1) * (zz == z1 - 1):
-                                z1g = (zz_o + 1) // m_zres[i]
+                                # take the ceil for the last chunk
+                                z1g = (zz_o + m_zres[i]) // m_zres[i]
                                 z0g = ((z1g - 1) // self.chunk_size[2]) * self.chunk_size[2]
                                 # check volume align
                                 # in z: has to be 
@@ -193,6 +194,7 @@ class ngDataset(object):
                                     y0[i] : y1[i], m_osA[i][2] + z0g : m_osA[i][2] + z1g, :] = \
                                     m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :]
                                 print(i, m_osA[i][2] + z0g, m_osA[i][2] + z1g)
+                                #print(i, m_osA[i][2] + z0g, m_osA[i][2] + z1g, m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :].max())
                                 m_tiles[i][:] = 0
             # >= mipI: write for each secion
             for i in [ii for ii in mip_levels if ii >= m_mip_id]:
