@@ -92,3 +92,26 @@ def rgbToSeg(seg):
     elif seg.ndim == 4: # n rgb image
         return seg[:,:,:,0].astype(np.uint32)*65536+seg[:,:,:,1].astype(np.uint32)*256+seg[:,:,:,2].astype(np.uint32)
 
+def segWidenBorder(seg, tsz_h=1):
+    # Kisuk Lee's thesis (A.1.4): 
+    # we preprocessed the ground truth seg such that any voxel centered on a 3 x 3 x 1 window containing 
+    # more than one positive segment ID (zero is reserved for background) is marked as background.
+    # seg=0: background
+    tsz = 2*tsz_h+1
+    sz = seg.shape
+    if len(sz)==3:
+        for z in range(sz[0]):
+            mm = seg[z].max()
+            patch = im2col(np.pad(seg[z],((tsz_h,tsz_h),(tsz_h,tsz_h)),'reflect'),[tsz,tsz])
+            p0=patch.max(axis=1)
+            patch[patch==0] = mm+1
+            p1=patch.min(axis=1)
+            seg[z] =seg[z]*((p0==p1).reshape(sz[1:]))
+    else:
+        mm = seg.max()
+        patch = im2col(np.pad(seg,((tsz_h,tsz_h),(tsz_h,tsz_h)),'reflect'),[tsz,tsz])
+        p0 = patch.max(axis=1)
+        patch[patch == 0] = mm + 1
+        p1 = patch.min(axis = 1)
+        seg = seg * ((p0 == p1).reshape(sz))
+    return seg

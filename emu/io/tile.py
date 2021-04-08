@@ -66,7 +66,6 @@ def readTileVolume(fns, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_type = np.ui
                 else:
                     print('Non-exist: %s'%filename)
     if bd is not None and max(bd)>0:
-        import pdb; pdb.set_trace()
         result = np.pad(result,
                 ((bd[0], bd[1]),
                  (bd[2] * tile_ratio[0], bd[3] * tile_ratio[0]),

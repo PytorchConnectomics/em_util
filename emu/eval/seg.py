@@ -53,7 +53,7 @@ def adapted_rand(seg, gt, all_stats=False):
 
     sumA = np.sum(a_i * a_i)
     sumB = np.sum(b_i * b_i) + (np.sum(c) / n)
-    sumAB = np.sum(d) + (np.sum(c) / n)
+    sumAB = float(np.sum(d) + (np.sum(c) / n))
 
     precision = sumAB / sumB
     recall = sumAB / sumA

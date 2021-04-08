@@ -1,6 +1,7 @@
 import os
 from glob import glob
 import shutil
+import struct
 
 import numpy as np
 from scipy.ndimage import zoom
@@ -10,7 +11,7 @@ from ..io import mkdir,writeTxt
 class ngDataset(object):
     def __init__(self, volume_size = [1024,1024,100], \
                  resolution = [6,6,30], chunk_size=[64,64,64], offset = [0,0,0], \
-                mip_ratio = [[1,1,1],[2,2,1],[4,4,1],[8,8,1],[16,16,2],[32,32,4]]):
+                mip_ratio = [[1,1,1],[2,2,1],[4,4,1],[8,8,1],[16,16,2],[32,32,4]], cloudpath=''):
         # dimension order: x,y,z
         self.volume_size = volume_size
         self.resolution = resolution
@@ -18,8 +19,15 @@ class ngDataset(object):
         self.mip_ratio = mip_ratio
         self.offset = offset
 
+        self.cloudpath = cloudpath
+        if cloudpath != '' and 'file' == cloudpath[:4]:
+            mkdir(cloudpath[7:])
+
     def createInfo(self, cloudpath = '', data_type = 'im', num_channel = 1, skel_radius=2):
         from cloudvolume import CloudVolume
+        if cloudpath == '':
+            cloudpath = self.cloudpath + '/seg/':
+
         if 'file' == cloudpath[:4]:
             mkdir(cloudpath[7:])
         num_mip_level = len(self.mip_ratio)
@@ -61,7 +69,7 @@ class ngDataset(object):
         vol = CloudVolume(cloudpath, info=info)
         vol.commit_info()
 
-    def createTile(self, getVolume, cloudpath = '', data_type = 'image', \
+    def createTile(self, getVolume, cloudpath = '', data_type = 'im', \
                    mip_levels = None, tile_size = [512,512], num_thread = 1, do_subdir = False, num_channel = 1):
         from cloudvolume import CloudVolume
         if data_type == 'im':
@@ -73,8 +81,12 @@ class ngDataset(object):
         else:
             raise ValueError('Unrecognized data type: ', data_type)
 
+        if cloudpath == '':
+            cloudpath = self.cloudpath + '/%s/'%data_type
+
         # write .htaccess
-        self.writeHtaccess(cloudpath[6:] + '/.htaccess', data_type, do_subdir)
+        if 'file' == cloudpath[:4]:
+            self.writeHtaccess(cloudpath[7:] + '/.htaccess', data_type, do_subdir)
 
         # setup cloudvolume writer
         num_mip_level = len(self.mip_ratio)
@@ -215,6 +227,8 @@ class ngDataset(object):
         from taskqueue import LocalTaskQueue
         import igneous.task_creation as tc
         
+        if cloudpath == '':
+            cloudpath = self.cloudpath + '/seg/'
         tq = LocalTaskQueue(parallel = num_thread)
         tasks = tc.create_meshing_tasks(cloudpath, mip = mip_level, \
                                         shape = volume_size, mesh_dir = 'mesh',\
@@ -226,6 +240,27 @@ class ngDataset(object):
         tasks = tc.create_mesh_manifest_tasks(cloudpath)
         tq.insert(tasks)
         tq.execute()
+
+    def createSkeleton(self, cloudpath='', coordinates):
+        if cloudpath == '':
+            cloudpath = self.cloudpath + '/skeletons/spatial0/'
+        
+        foldername = cloudpath
+        if 'file' == cloudpath[:4]:
+            foldername = cloudpath[7:]
+        mkdir(foldername, 2)
+
+        with open(foldername + '0_0_0', 'wb') as outfile:
+            total_count=len(coordinates) # coordinates is a list of tuples (x,y,z) 
+            buf = struct.pack('<Q',total_count)
+            for (x,y,z) in coordinates:
+                pt_buf = struct.pack('<3f',x,y,z)
+                buf+=pt_buf
+            # write the ids at the end of the buffer as increasing integers 
+            id_buf = struct.pack('<%sQ' % len(coordinates), *range(len(coordinates)))
+            buf+=id_buf
+            outfile.write(buf)
+
 
     def writeHtaccess(self, output_file, data_type = 'im', do_subdir = False):
         out = """# If you get a 403 Forbidden error, try to comment out the Options directives
