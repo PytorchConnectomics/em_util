@@ -26,7 +26,7 @@ class ngDataset(object):
     def createInfo(self, cloudpath = '', data_type = 'im', num_channel = 1, skel_radius=2):
         from cloudvolume import CloudVolume
         if cloudpath == '':
-            cloudpath = self.cloudpath + '/seg/':
+            cloudpath = self.cloudpath + '/seg/'
 
         if 'file' == cloudpath[:4]:
             mkdir(cloudpath[7:])
@@ -127,14 +127,13 @@ class ngDataset(object):
         y0   = [None] * num_mip_level
         y1   = [None] * num_mip_level
         
-        # num of chunk: x and y
+        # num of chunk: x and y (offset)
         # keep the size
-        num_chunk = [(m_szA[mip_levels[0]][x] + m_tszA[mip_levels[0]][x]-1) // m_tszA[mip_levels[0]][x] for x in range(2)]
+        num_chunk = [(m_szA[mip_levels[0]][x] + m_tszA[mip_levels[0]][x]-1 - m_osA[mip_levels[0]][x]) // m_tszA[mip_levels[0]][x] for x in range(2)]
         # num of chunk: z
         # so that the tile-based mip-levels can output tiles
         num_ztile = self.mip_ratio[m_mip_id-1][2]*self.chunk_size[2]
         num_chunk += [(m_szA[mip_levels[0]][2] - m_osA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
-
         for z in range(num_chunk[2]):
             z0 = z * num_ztile + m_osA[mip_levels[0]][2]
             z1 = min(self.volume_size[2], (z+1) * num_ztile) + m_osA[mip_levels[0]][2]
@@ -223,7 +222,7 @@ class ngDataset(object):
                     m_tiles[i][:] = 0
 
     def createMesh(self, cloudpath='', mip_level=0, volume_size=[256,256,100], \
-                   num_thread = 1, dust_threshold = None, do_subdir = False):
+                   num_thread = 1, dust_threshold = None, do_subdir = False, object_ids = None):
         from taskqueue import LocalTaskQueue
         import igneous.task_creation as tc
         
@@ -231,7 +230,7 @@ class ngDataset(object):
             cloudpath = self.cloudpath + '/seg/'
         tq = LocalTaskQueue(parallel = num_thread)
         tasks = tc.create_meshing_tasks(cloudpath, mip = mip_level, \
-                                        shape = volume_size, mesh_dir = 'mesh',\
+                                        shape = volume_size, mesh_dir = 'mesh', object_ids = object_ids, \
                                         dust_threshold = 20, max_simplification_error = 40, do_subdir = do_subdir)
         tq.insert(tasks)
         tq.execute()
@@ -241,16 +240,23 @@ class ngDataset(object):
         tq.insert(tasks)
         tq.execute()
 
-    def createSkeleton(self, cloudpath='', coordinates):
+    def createSkeleton(self, coordinates, cloudpath='', volume_size=None, resolution=None):
+        # coordinates is a list of tuples (x,y,z)
         if cloudpath == '':
             cloudpath = self.cloudpath + '/skeletons/spatial0/'
-        
+        if volume_size is None:
+            volume_size = self.volume_size
+        if resolution is None:
+            resolution = self.resolution
+
         foldername = cloudpath
         if 'file' == cloudpath[:4]:
             foldername = cloudpath[7:]
         mkdir(foldername, 2)
 
-        with open(foldername + '0_0_0', 'wb') as outfile:
+        self.writeSkeletonInfo(foldername + '../info', volume_size, resolution)
+
+        with open(foldername + '/0_0_0', 'wb') as outfile:
             total_count=len(coordinates) # coordinates is a list of tuples (x,y,z) 
             buf = struct.pack('<Q',total_count)
             for (x,y,z) in coordinates:
@@ -261,6 +267,39 @@ class ngDataset(object):
             buf+=id_buf
             outfile.write(buf)
 
+    def writeSkeletonInfo(self, output_file='', volume_size=None, resolution=None):
+        if output_file is None:
+            output_file = self.cloudpath + 'skeletons/info'
+        if volume_size is None:
+            volume_size = self.volume_size
+        if resolution is None:
+            resolution = self.resolution
+
+        out = """{
+           "@type" : "neuroglancer_annotations_v1",
+           "annotation_type" : "POINT",
+           "by_id" : {
+              "key" : "by_id"
+           },
+           "dimensions" : {
+              "x" : [ %.e, "m" ],
+              "y" : [ %.e, "m" ],
+              "z" : [ %.e, "m" ]
+           },
+           "lower_bound" : [ 0, 0, 0 ],
+           "properties" : [],
+           "relationships" : [],
+           "spatial" : [
+              {
+                 "chunk_size" : [ %d, %d, %d ],
+                 "grid_shape" : [ 1, 1, 1 ],
+                 "key" : "spatial0",
+                 "limit" : 1
+              }
+           ],
+           "upper_bound" : [ %d, %d, %d]
+        }"""%(resolution[0],resolution[1],resolution[2],volume_size[0],volume_size[1],volume_size[2],volume_size[0],volume_size[1],volume_size[2])
+        writeTxt(output_file, out)
 
     def writeHtaccess(self, output_file, data_type = 'im', do_subdir = False):
         out = """# If you get a 403 Forbidden error, try to comment out the Options directives
