@@ -129,24 +129,26 @@ class ngDataset(object):
         
         # num of chunk: x and y (offset)
         # keep the size
-        num_chunk = [(m_szA[mip_levels[0]][x] + m_tszA[mip_levels[0]][x]-1 - m_osA[mip_levels[0]][x]) // m_tszA[mip_levels[0]][x] for x in range(2)]
+        #num_chunk = [(m_szA[mip_levels[0]][x] + m_tszA[mip_levels[0]][x]-1 - m_osA[mip_levels[0]][x]) // m_tszA[mip_levels[0]][x] for x in range(2)]
+        num_chunk = [(m_szA[mip_levels[0]][x] + m_tszA[mip_levels[0]][x]-1) // m_tszA[mip_levels[0]][x] for x in range(2)]
         # num of chunk: z
         # so that the tile-based mip-levels can output tiles
         num_ztile = self.mip_ratio[m_mip_id-1][2]*self.chunk_size[2]
-        num_chunk += [(m_szA[mip_levels[0]][2] - m_osA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
+        num_chunk += [(m_szA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
+        #num_chunk += [(m_szA[mip_levels[0]][2] - m_osA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
         for z in range(num_chunk[2]):
-            z0 = z * num_ztile + m_osA[mip_levels[0]][2]
-            z1 = min(self.volume_size[2], (z+1) * num_ztile) + m_osA[mip_levels[0]][2]
+            z0 = z * num_ztile
+            z1 = min(self.volume_size[2], (z+1) * num_ztile)
             for y in range(num_chunk[1]):
                 for x in range(num_chunk[0]):
                     print('do chunk: %d/%d, %d/%d, %d/%d' % (z, num_chunk[2], y, num_chunk[1], x, num_chunk[0]))
                     # generate global coord
                     for i in mip_levels:
                         # add offset for axis-aligned write
-                        x0[i] = m_osA[i][0] + x * m_tszA[i][0]
-                        x1[i] = min(x0[i] + m_tszA[i][0], m_osA[i][0] +m_szA[i][0])
-                        y0[i] = m_osA[i][1] + y * m_tszA[i][1]
-                        y1[i] = min(y0[i] + m_tszA[i][1], m_osA[i][1] +m_szA[i][1])
+                        x0[i] = x * m_tszA[i][0]
+                        x1[i] = min(x0[i] + m_tszA[i][0], m_szA[i][0])
+                        y0[i] = y * m_tszA[i][1]
+                        y1[i] = min(y0[i] + m_tszA[i][1], m_szA[i][1])
                     # read tiles
                     # input/output dimension order: z,y,x 
                     ims = getVolume(z0, z1, \
@@ -154,7 +156,7 @@ class ngDataset(object):
                                     x0[mip_levels[0]], x1[mip_levels[0]])
                     
                     for zz in range(z0,z1):
-                        zz_o = zz - m_osA[mip_levels[0]][2]
+                        zz_o = zz
                         if ims[0].ndim == 2:
                             im = ims[zz-z0].transpose((1,0))
                         else:
@@ -188,8 +190,8 @@ class ngDataset(object):
                                 if i < m_mip_id: # whole tile 
                                     m_tiles[i][:im.shape[0], :im.shape[1], zzl] = im.reshape(m_tiles[i][:im.shape[0], :im.shape[1], zzl].shape)
                                 else: # piece into one slice
-                                    tmp = m_tiles[i][(x0[i]-m_osA[i][0]): (x1[i]-m_osA[i][0]), \
-                                               (y0[i]-m_osA[i][1]): (y1[i]-m_osA[i][1]), zzl]
+                                    tmp = m_tiles[i][x0[i]: x1[i], \
+                                               y0[i]: y1[i], zzl]
                                     tmp[:] = im[:(x1[i]-x0[i]), :(y1[i]-y0[i])].reshape(tmp.shape)
                         # < mipI: write for each tile 
                         # save tile into cloudvolume
@@ -201,24 +203,21 @@ class ngDataset(object):
                                 z0g = ((z1g - 1) // self.chunk_size[2]) * self.chunk_size[2]
                                 # check volume align
                                 # in z: has to be 
-                                m_vols[i][x0[i] : x1[i], \
-                                    y0[i] : y1[i], m_osA[i][2] + z0g : m_osA[i][2] + z1g, :] = \
+                                m_vols[i][x0[i]: x1[i], \
+                                    y0[i]: y1[i], z0g: z1g, :] = \
                                     m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :]
-                                print(i, m_osA[i][2] + z0g, m_osA[i][2] + z1g)
+                                print(i, z0g, z1g)
                                 #print(i, m_osA[i][2] + z0g, m_osA[i][2] + z1g, m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :].max())
                                 m_tiles[i][:] = 0
             # >= mipI: write for each secion
             for i in [ii for ii in mip_levels if ii >= m_mip_id]:
-                z1_o = z1 - m_osA[mip_levels[0]][2]
+                z1_o = z1
                 if z1_o % (m_zres[i] * self.chunk_size[2]) == 0 or z == num_chunk[2] - 1:
                     z1g = (z1_o + m_zres[i] - 1) // m_zres[i]
                     z0g = z1g - self.chunk_size[2]
                     if z1_o % (m_zres[i] * self.chunk_size[2]) != 0: # last unfilled chunk
                         z0g = (z1g // self.chunk_size[2]) * self.chunk_size[2]
-                    try:
-                        m_vols[i][:, :, z0g + m_osA[i][2] : z1g + m_osA[i][2], :] = m_tiles[i][:, :, : z1g - z0g, :]
-                    except:
-                        import pdb; pdb.set_trace()
+                    m_vols[i][m_osA[i][0]:, m_osA[i][1]:, z0g+m_osA[i][2]: z1g+m_osA[i][2], :] = m_tiles[i][:, :, : z1g - z0g, :]
                     m_tiles[i][:] = 0
 
     def createMesh(self, cloudpath='', mip_level=0, volume_size=[256,256,100], \
