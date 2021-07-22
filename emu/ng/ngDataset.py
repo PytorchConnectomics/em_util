@@ -202,9 +202,8 @@ class ngDataset(object):
                                 z1g = (zz_o + m_zres[i]) // m_zres[i]
                                 z0g = ((z1g - 1) // self.chunk_size[2]) * self.chunk_size[2]
                                 # check volume align
-                                # in z: has to be 
-                                m_vols[i][x0[i]: x1[i], \
-                                    y0[i]: y1[i], z0g: z1g, :] = \
+                                m_vols[i][x0[i]+m_osA[i][0]: x1[i]+m_osA[i][0], \
+                                    y0[i]+m_osA[i][1]: y1[i]+m_osA[i][1], z0g+m_osA[i][2]: z1g+m_osA[i][2], :] = \
                                     m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :]
                                 print(i, z0g, z1g)
                                 #print(i, m_osA[i][2] + z0g, m_osA[i][2] + z1g, m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :].max())
