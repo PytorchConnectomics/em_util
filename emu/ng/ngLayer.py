@@ -1,4 +1,7 @@
-import neuroglancer
+try:
+    import neuroglancer
+except:
+    pass
 
 def ngLayer(data,res,oo=[0,0,0],tt='segmentation'):
     # input zyx -> display xyz
