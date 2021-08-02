@@ -1,10 +1,11 @@
 import os,sys
 from scipy.ndimage import zoom
 import json
-from .io import readImage
+from .io import readImage,mkdir
 from .seg import rgbToSeg
 import numpy as np
-import json
+import shutil,json
+from imageio import imwrite
 
 def readTileVolume(fns, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_type = np.uint8,\
              tile_st = [0, 0], tile_ratio = 1, tile_resize_mode = 1, tile_seg = False, tile_blank = 'reflect', volume_sz = None):
@@ -90,3 +91,21 @@ def writeTileInfo(sz, numT, imN, tsz=1024, tile_st=[0,0],zPad=[0,0], im_id=None,
     else:
         with open(outName,'w') as fid:
             json.dump(out, fid)
+
+def writeMipmapSingle(file_names, output_folder='./', mip_levels=[0,1,2], downsample_type=1):
+    mkdir(output_folder)
+    for m in mip_levels:
+        mkdir(output_folder + '/mip%d'%m)
+
+    for z in range(len(file_names)):
+        fn = output_folder + '/mip%d/%04d.png'
+        if not os.path.exists(fn %(mip_levels[-1], z)):
+            im = readImage(file_names[z])
+            if 0 in mip_levels and not os.path.exists(fn % (0,z)):
+                shutil.copy(file_names[z], fn % (0,z))
+            mip_levels = [x for x in mip_levels if x>0]
+            for i in range(mip_levels[0]-1):
+                im = zoom(im, [0.5,0.5], order=downsample_type)
+            for i in mip_levels:
+                im = zoom(im, [0.5,0.5], order=downsample_type)
+                imwrite(fn%(i, z), im)
