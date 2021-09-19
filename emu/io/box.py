@@ -19,6 +19,8 @@ def get_bb_all2d(seg, do_count=False, uid=None):
     if uid is None:
         uid = np.unique(seg)
         uid = uid[uid>0]
+    if len(uid) == 0:
+        return np.zeros((1,5+do_count),dtype=np.uint32)
 
     um = uid.max()
     out = np.zeros((1+int(um),5+do_count),dtype=np.uint32)

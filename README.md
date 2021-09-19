@@ -6,7 +6,7 @@ toolbox utility functions
 ```
 conda create -n emu python==3.7
 source activate emu
-pip install --editable .
+python setup.py build_ext --inplace
 ```
 
 ### Useful Packages

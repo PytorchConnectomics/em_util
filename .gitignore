@@ -133,3 +133,4 @@ dmypy.json
 T_slurm.py
 db/
 *~
+*.h5
