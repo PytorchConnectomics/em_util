@@ -1,7 +1,7 @@
 import os,sys
 import json
-from emu.ng import *
-from emu.io import readH5, readTileVolume
+from imu.ng import *
+from imu.io import readH5, readTileVolume
 
 DD='/n/pfister_lab2/Lab/public/ng/'
 Do = 'file://' + '/n/pfister_lab2/Lab/public/ng/'

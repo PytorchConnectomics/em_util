@@ -2,7 +2,7 @@ import os,sys
 import numpy as np
 import h5py
 from imageio import imread, imwrite
-from emu.io import get_bb, segBiggest
+from imu.io import get_bb, segBiggest
 
 from scipy.ndimage import zoom
 from scipy.ndimage.morphology import binary_opening,binary_fill_holes,binary_dilation

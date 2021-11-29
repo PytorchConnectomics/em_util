@@ -4,7 +4,7 @@ from funlib import evaluate
 import h5py
 import numpy as np
 import networkx as nx
-from emu.io import readH5, skelToLength, skelToNetworkX
+from imu.io import readH5, skelToLength, skelToNetworkX
 
 def test_len(skel_pickle_path, res= [30,6,6]):
     nodes, edges = pickle.load(open(skel_pickle_path, 'rb'), encoding="latin1")
