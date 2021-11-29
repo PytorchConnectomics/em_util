@@ -10,8 +10,8 @@ def getInclude():
 def getExtension():
     extensions = []
     extensions += [Extension(
-            'emu.seg.region_graph',
-            sources=['emu/seg/region_graph.pyx', 'emu/seg/cpp/region_graph.cpp'],
+            'imu.seg.region_graph',
+            sources=['imu/seg/region_graph.pyx', 'imu/seg/cpp/region_graph.cpp'],
             language='c++',
             extra_link_args=['-std=c++11'],
             extra_compile_args=['-std=c++11'])]
@@ -21,7 +21,7 @@ def setup_package():
     __version__ = '0.1'
     url = 'https://github.com/donglaiw/EM-util'
 
-    setup(name='emu',
+    setup(name='imu',
         description='Utility Functions for EM Connectomics',
         version=__version__,
         url=url,
@@ -32,9 +32,9 @@ def setup_package():
         packages=find_packages(),
         package_data={
             '': [
-                'emu/seg/cpp/*.h',
-                'emu/seg/cpp/*.cpp',
-                'emu/seg/*.pyx',
+                'imu/seg/cpp/*.h',
+                'imu/seg/cpp/*.cpp',
+                'imu/seg/*.pyx',
             ]
         },
         ext_modules=cythonize(getExtension())
