@@ -46,11 +46,11 @@ def setup_package(no_cython=True):
     )
 
 if __name__=='__main__':
+    # install main python functions
     # pip install --editable .
+    # compile extra cython functions
     # python setup.py build_ext --inplace
-    # python setup.py build_ext --inplace --cython
     no_cython = True
-    if '--cython' in sys.argv:
+    if 'build_ext' in sys.argv:
         no_cython = False
-        sys.argv.remove("--cython")
     setup_package(no_cython)
