@@ -1,11 +1,11 @@
-# EM-util
-toolbox utility functions
+# ImUtil
+Image analysis utility functions
 
 
 ### Installation
 ```
-conda create -n emu python==3.7
-source activate emu
+conda create -n imu python==3.7
+source activate imu
 python setup.py build_ext --inplace
 ```
 
