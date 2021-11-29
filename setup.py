@@ -1,7 +1,6 @@
 import os, sys
 from distutils.sysconfig import get_python_inc
 from setuptools import setup, Extension, find_packages
-from Cython.Build import cythonize
 import numpy as np
 
 def getInclude():
@@ -24,8 +23,8 @@ def setup_package(no_cython=True):
 
     exts = [] 
     if not no_cython:
+        from Cython.Build import cythonize
         exts = cythonize(getExtension())
-    import pdb; pdb.set_trace()
 
     setup(name='imu',
         description='Utility Functions for Image Analysis',
