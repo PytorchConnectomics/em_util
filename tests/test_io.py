@@ -1,5 +1,5 @@
 import os,sys
-from emu.io import *
+from imu.io import *
 
 
 def test_bfly():

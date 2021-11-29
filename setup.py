@@ -2,10 +2,11 @@ import os, sys
 from distutils.sysconfig import get_python_inc
 from setuptools import setup, Extension, find_packages
 from Cython.Build import cythonize
+import numpy as np
 
 def getInclude():
     dirName = get_python_inc()
-    return [dirName, os.path.dirname(dirName)]
+    return [dirName, os.path.dirname(dirName), np.get_include()]
 
 def getExtension():
     extensions = []
@@ -19,10 +20,10 @@ def getExtension():
 
 def setup_package():
     __version__ = '0.1'
-    url = 'https://github.com/donglaiw/EM-util'
+    url = 'https://github.com/donglaiw/ImUtil'
 
     setup(name='imu',
-        description='Utility Functions for EM Connectomics',
+        description='Utility Functions for Image Analysis',
         version=__version__,
         url=url,
         license='MIT',

@@ -6,6 +6,8 @@ Image analysis utility functions
 ```
 conda create -n imu python==3.7
 source activate imu
+conda install pip cython numpy
+pip install --editable .
 python setup.py build_ext --inplace
 ```
 
