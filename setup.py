@@ -18,9 +18,14 @@ def getExtension():
             extra_compile_args=['-std=c++11'])]
     return extensions
 
-def setup_package():
+def setup_package(no_cython=True):
     __version__ = '0.1'
     url = 'https://github.com/donglaiw/ImUtil'
+
+    exts = [] 
+    if not no_cython:
+        exts = cythonize(getExtension())
+    import pdb; pdb.set_trace()
 
     setup(name='imu',
         description='Utility Functions for Image Analysis',
@@ -38,10 +43,15 @@ def setup_package():
                 'imu/seg/*.pyx',
             ]
         },
-        ext_modules=cythonize(getExtension())
+        ext_modules=exts
     )
 
 if __name__=='__main__':
     # pip install --editable .
     # python setup.py build_ext --inplace
-    setup_package()
+    # python setup.py build_ext --inplace --cython
+    no_cython = True
+    if '--cython' in sys.argv:
+        no_cython = False
+        sys.argv.remove("--cython")
+    setup_package(no_cython)
