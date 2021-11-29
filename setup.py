@@ -22,9 +22,15 @@ def setup_package(no_cython=True):
     url = 'https://github.com/donglaiw/ImUtil'
 
     exts = [] 
+    package_data = {}
     if not no_cython:
         from Cython.Build import cythonize
         exts = cythonize(getExtension())
+        package_data = {'': [
+                'imu/seg/cpp/*.h',
+                'imu/seg/cpp/*.cpp',
+                'imu/seg/*.pyx',
+            ]}
 
     setup(name='imu',
         description='Utility Functions for Image Analysis',
@@ -32,16 +38,10 @@ def setup_package(no_cython=True):
         url=url,
         license='MIT',
         author='Donglai Wei',
-        install_requires=['cython','scipy','numpy','networkx','h5py','imageio'],
+        install_requires=['scipy','numpy','networkx','h5py','imageio'],
         include_dirs=getInclude(), 
         packages=find_packages(),
-        package_data={
-            '': [
-                'imu/seg/cpp/*.h',
-                'imu/seg/cpp/*.cpp',
-                'imu/seg/*.pyx',
-            ]
-        },
+        package_data=package_data,
         ext_modules=exts
     )
 
