@@ -55,7 +55,7 @@ class html_shot(html_base):
             var out=""
             out += "<table border=1>"
             out += '<thead style="display:block;">'
-            out += "<tr><td>shot ID</td><td>frame ID</td><td>images</td></tr>"
+            out += "<tr><td>shot ID</td><td>frame ID</td><td>image num</td><td>images</td></tr>"
             out += "</thead>"
             out += '<tbody style="display:block;height:1300px;overflow-y:auto">'
             var lt = 1;
