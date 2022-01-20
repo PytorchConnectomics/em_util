@@ -1,8 +1,9 @@
 from .html_base import html_base 
 
 class html_shot(html_base):
-    def __init__(self, frame_name = '%04d.png', frame_num = 100, frame_start = 0,\
+    def __init__(self, vid_name, frame_name = '%04d.png', frame_num = 100, frame_start = 0,\
                 frame_fps = 30, file_result ='shot_detection.html', num_col = 5):
+        self.vid_name = vid_name
         self.frame_name = frame_name
         self.frame_num = frame_num
         self.frame_start = frame_start
@@ -120,7 +121,7 @@ class html_shot(html_base):
             }
             const blob = new Blob(savedata, { type: 'csv' });
             filename = "%s";
-            """ %('\n',self.frame_name[:self.frame_name.rfind("/")]+"_shots.csv")
+            """ %('\n',self.vid_name+"_shots.csv")
         out += """
             if (window.navigator.msSaveOrOpenBlob) {
                 window.navigator.msSaveBlob(blob, filename);
