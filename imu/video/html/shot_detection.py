@@ -119,8 +119,9 @@ class html_shot(html_base):
                 savedata.push("" + shot_start[i] + "," + shot_selection[i] + "," + "\n")
             }
             const blob = new Blob(savedata, { type: 'csv' });
-            filename = %s""" % (self.frame_name[:self.frame_name.rfind('/')]+'_shots.csv')
-        out +="""
+            filename = %s;
+            """ % (self.frame_name[:self.frame_name.rfind('/')]+'_shots.csv')
+        out += """
             if (window.navigator.msSaveOrOpenBlob) {
                 window.navigator.msSaveBlob(blob, filename);
             }
