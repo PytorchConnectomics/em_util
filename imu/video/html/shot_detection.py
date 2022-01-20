@@ -118,12 +118,10 @@ class html_shot(html_base):
             alert('This action will download the finalized CSV file!')
             const savedata = []
             for (i = 0; i < shot_start.length; i++) {
-                savedata.push("" + shot_start[i] + "," + shot_selection[i] + "," + "%c")
+                savedata.push("" + shot_start[i] + "," + shot_selection[i] + "," + "\n")
             }
             const blob = new Blob(savedata, { type: 'csv' });
             filename = vid_name + "_shots.csv";
-            """ %('\n')
-        out += """
             if (window.navigator.msSaveOrOpenBlob) {
                 window.navigator.msSaveBlob(blob, filename);
             }
