@@ -29,12 +29,13 @@ class html_shot(html_base):
         out = '<script src="%s"></script>' % self.file_result
         out += """
         <script>
+        var vid_name = "%s";
         var frame_name = "%s";
         var frame_num = %d;
         var frame_start = %d;
         var frame_fps = %d;
         var num_col = %d;
-        """ % (self.frame_name, self.frame_num, self.frame_start, self.frame_fps, self.num_col)
+        """ % (self.vid_name, self.frame_name, self.frame_num, self.frame_start, self.frame_fps, self.num_col)
         out += """
         var shot_start = [0];
         var shot_selection = [0];
@@ -120,8 +121,8 @@ class html_shot(html_base):
                 savedata.push("" + shot_start[i] + "," + shot_selection[i] + "," + "%c")
             }
             const blob = new Blob(savedata, { type: 'csv' });
-            filename = "%s";
-            """ %('\n',self.vid_name+"_shots.csv")
+            filename = vid_name + "_shots.csv";
+            """ %('\n')
         out += """
             if (window.navigator.msSaveOrOpenBlob) {
                 window.navigator.msSaveBlob(blob, filename);
