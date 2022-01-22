@@ -1,11 +1,10 @@
 from .html_base import html_base 
 
 class html_shot(html_base):
-    def __init__(self, vid_name, frame_name = '%04d.png', frame_num = 100, frame_start = 0,\
+    def __init__(self, vid_name, frame_name = '%04d.png', frame_start = 0,\
                 frame_fps = 30, file_result ='shot_detection.html', num_col = 5):
         self.vid_name = vid_name
         self.frame_name = frame_name
-        self.frame_num = frame_num
         self.frame_start = frame_start
         self.frame_fps = frame_fps
         self.file_result = file_result
@@ -31,11 +30,10 @@ class html_shot(html_base):
         <script>
         var vid_name = "%s";
         var frame_name = "%s";
-        var frame_num = %d;
         var frame_start = %d;
         var frame_fps = %d;
         var num_col = %d;
-        """ % (self.vid_name, self.frame_name, self.frame_num, self.frame_start, self.frame_fps, self.num_col)
+        """ % (self.vid_name, self.frame_name, self.frame_start, self.frame_fps, self.num_col)
         out += """
         var shot_start = [0];
         var shot_selection = [0];
@@ -59,12 +57,8 @@ class html_shot(html_base):
             out += "</thead>"
             out += '<tbody style="display:block;height:1300px;overflow-y:auto">'
             var lt = 1;
-            for(i = 0;i < shot_start.length; i ++){
-                if(i == shot_start.length - 1){
-                    lt = frame_num - 1;
-                }else{
-                    lt = shot_start[i+1] - 1
-                }
+            for(i = 0;i < shot_start.length - 1; i ++){
+                lt = shot_start[i+1]
                 out+='<tr><td id="t'+(i)+'" class="shot_sel" style="background-color:'+color_name_shot[shot_selection[i]]+';">'+(i)+"</td><td>"+shot_start[i]+"-"+(lt)+"</td><td>"
                 out+='<table>'
                 for(j = shot_start[i]; j < lt + 1; j ++){
