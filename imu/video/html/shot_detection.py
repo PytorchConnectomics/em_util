@@ -1,10 +1,10 @@
 from .html_base import html_base 
 
 class html_shot(html_base):
-    def __init__(self, frame_name = '%04d.png', frame_num = 100, frame_start = 0,\
-                frame_fps = 30, file_result ='shot_detection.html', num_col = 7):
+    def __init__(self, vid_name, frame_name = '%04d.png', frame_start = 0,\
+                frame_fps = 30, file_result ='shot_detection.html', num_col = 5):
+        self.vid_name = vid_name
         self.frame_name = frame_name
-        self.frame_num = frame_num
         self.frame_start = frame_start
         self.frame_fps = frame_fps
         self.file_result = file_result
@@ -12,8 +12,9 @@ class html_shot(html_base):
 
     def getBody(self):
         out = """Shot starting IDs: <textarea id="shot" cols=50 rows=10></textarea> (separated by comma)
+        Number of images per row: <textarea id="view" cols=5 rows=1></textarea>
         <br/>
-        <button id="sub" style="width:400;height=200">Done</button>
+        <button id="sub" style="width:400;height=200">Download CSV</button>
         <div id="img"></div>"""
         return out
 
@@ -27,12 +28,12 @@ class html_shot(html_base):
         out = '<script src="%s"></script>' % self.file_result
         out += """
         <script>
+        var vid_name = "%s";
         var frame_name = "%s";
-        var frame_num = %d;
         var frame_start = %d;
         var frame_fps = %d;
         var num_col = %d;
-        """ % (self.frame_name, self.frame_num, self.frame_start, self.frame_fps, self.num_col)
+        """ % (self.vid_name, self.frame_name, self.frame_start, self.frame_fps, self.num_col)
         out += """
         var shot_start = [0];
         var shot_selection = [0];
@@ -52,22 +53,19 @@ class html_shot(html_base):
             var out=""
             out += "<table border=1>"
             out += '<thead style="display:block;">'
-            out += "<tr><td>shot ID</td><td>frame ID</td><td>images</td></tr>"
+            out += "<tr><td>shot ID</td><td>frame ID</td><td>image num</td><td>images</td></tr>"
             out += "</thead>"
             out += '<tbody style="display:block;height:1300px;overflow-y:auto">'
             var lt = 1;
-            for(i = 0;i < shot_start.length; i ++){
-                if(i == shot_start.length - 1){
-                    lt = frame_num - 1;
-                }else{
-                    lt = shot_start[i+1] - 1
-                }
+            for(i = 0;i < shot_start.length - 1; i ++){
+                lt = shot_start[i+1]
                 out+='<tr><td id="t'+(i)+'" class="shot_sel" style="background-color:'+color_name_shot[shot_selection[i]]+';">'+(i)+"</td><td>"+shot_start[i]+"-"+(lt)+"</td><td>"
                 out+='<table>'
                 for(j = shot_start[i]; j < lt + 1; j ++){
                     if ((j - shot_start[i]) % num_col == 0){
                         out += '<tr><td>'
                     }
+                    out += "" + j
                     out+='<img height=100 src="'+getImName(j)+'">'
                     if ((j - shot_start[i] + 1) % num_col == 0){
                         out +='</td></tr>'
@@ -95,14 +93,40 @@ class html_shot(html_base):
             shot_selection = strToArray(shot_selection_str);
             update_display();
         }
+        function update_range(var_col_str){
+            num_col = parseInt(var_col_str);
+            update_display();
+        }
         $("#shot").change(function(){
             var shot_start_str = $(this).val();
             var shot_selection_str = updateArr(shot_start, shot_selection, strToArray(shot_start_str), '0');
             update_value(shot_start_str, shot_selection_str);
         });
+        $("#view").change(function () {
+            var col_str = $(this).val();
+            update_range(col_str)
+        });
         $("#sub").click(function(){
             //
-            console.log('shot:'+shot_selection);
+            console.log('shot:' + shot_selection);
+            alert('This action will download the finalized CSV file!')
+            const savedata = []
+            for (i = 0; i < shot_start.length; i++) {
+                savedata.push("" + shot_start[i] + "," + shot_selection[i] + "," + "\\n")
+            }
+            const blob = new Blob(savedata, { type: 'csv' });
+            filename = vid_name + "_shots.csv";
+            if (window.navigator.msSaveOrOpenBlob) {
+                window.navigator.msSaveBlob(blob, filename);
+            }
+            else {
+                const elem = window.document.createElement('a');
+                elem.href = window.URL.createObjectURL(blob);
+                elem.download = filename;
+                document.body.appendChild(elem);
+                elem.click();
+                document.body.removeChild(elem);
+            }
             // uncomment the code below to save the result on the server
             /*
             ans_out = $("#shot").val();
