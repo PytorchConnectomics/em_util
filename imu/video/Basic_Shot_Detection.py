@@ -69,6 +69,9 @@ class Shot_detect():
         self.att = self.att.round()
 
     def set_thresholds(self, thresh1=None, thresh2=None):
+        '''
+        Input: thresh1: Hand thresholds in HSV pairs, thresh 2: Shadow thresholds in HSV pairs 
+        '''
         if thresh1 is not None:
             self.hsv_low = np.array(thresh1[0:3])
             self.hsv_high = np.array(thresh1[3:])
@@ -82,6 +85,10 @@ class Shot_detect():
             self.crop_indices = [0, 360, 0, 640]
 
     def thresh_image(self, frame_id):
+        '''
+        Input: Frame_id 
+        Output: Feature map containing hand and shadow regions segmented. 
+        '''
         assert self.hsv_high is not None and self.hsv_high_tab is not None, 'Cannot segment image!! Please set HSV thresholds first.'
         im = cv2.imread(self.fns[frame_id])
         im_hsv = cv2.cvtColor(im[self.crop_indices[0]:self.crop_indices[1], self.crop_indices[2]:self.crop_indices[3], :], cv2.COLOR_BGR2HSV)
@@ -181,6 +188,9 @@ class Shot_detect():
         self.feat = np.load(feature_path)
 
     def generate(self):
+        '''
+        Generates a js file containing str shot_start and shot_selection and a html file for proofreading. 
+        '''
         num = len(self.shot_start) // 2
         shot_label = np.vstack([np.ones([1, num]), np.zeros([1, num])]).T.reshape(-1)
         saveShotDetection(os.path.join(self.video, 'shot.js'), self.shot_start, shot_label)
