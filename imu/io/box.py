@@ -50,14 +50,16 @@ def get_bb_all3d(seg,do_count=False, uid=None):
     sz = seg.shape
     assert len(sz)==3
     if uid is None:
-        uid = np.unique(seg)
-        uid = uid[uid>0]
+        uid = seg
     um = int(uid.max())
-    out = np.zeros((1+um,7+do_count),dtype=np.uint32)
+    out = np.zeros((1+um,7+do_count),dtype=np.int32)
     out[:,0] = np.arange(out.shape[0])
     out[:,1] = sz[0]
+    out[:,2] = -1
     out[:,3] = sz[1]
+    out[:,4] = -1
     out[:,5] = sz[2]
+    out[:,6] = -1
 
     # for each slice
     zids = np.where((seg>0).sum(axis=1).sum(axis=1)>0)[0]
@@ -87,7 +89,7 @@ def get_bb_all3d(seg,do_count=False, uid=None):
         ui,uc = np.unique(seg,return_counts=True)
         out[ui[ui<=um],-1]=uc[ui<=um]
 
-    return out[uid]
+    return out[np.all(out!=-1, axis=-1)].astype(np.uint32)
 
 
 
