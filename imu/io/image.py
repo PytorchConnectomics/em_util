@@ -1,8 +1,11 @@
 import numpy as np
 
-def imAdjust(I, thres=[1,99], autoscale=None):
+def imAdjust(I, thres=[1,99], do_percentile=True, autoscale=None):
     # compute percentile: remove too big or too small values
-    I_low, I_high = np.percentile(I.reshape(-1), thres)
+    if do_percentile:
+        I_low, I_high = np.percentile(I.reshape(-1), thres)
+    else:
+        I_low, I_high = thres[0], thres[1]
     # thresholding
     I[I > I_high] = I_high
     I[I < I_low] = I_low
