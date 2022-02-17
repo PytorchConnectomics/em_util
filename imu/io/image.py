@@ -1,6 +1,6 @@
 import numpy as np
 
-def imTrimBlack(I):
+def imTrimBlack(I, return_ind=False):
     # trim the black pixels on the border
     ind = [0]*6
     for cid in range(3):
@@ -13,7 +13,10 @@ def imTrimBlack(I):
         tmp_ind = np.where(tmp_max>0)[0]
         ind[cid * 2] = tmp_ind[0]
         ind[cid * 2 + 1] = tmp_ind[-1] +1
-    return I[ind[0]:ind[1], ind[2]:ind[3], ind[4]:ind[5]]
+    if return_ind:
+        return I[ind[0]:ind[1], ind[2]:ind[3], ind[4]:ind[5]], ind
+    else:
+        return I[ind[0]:ind[1], ind[2]:ind[3], ind[4]:ind[5]]
 
 def imAdjust(I, thres=[1,99,True], autoscale=None):
     # compute percentile: remove too big or too small values
