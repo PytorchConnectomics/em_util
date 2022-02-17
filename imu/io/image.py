@@ -2,7 +2,7 @@ import numpy as np
 
 def imTrimBlack(I, return_ind=False):
     # trim the black pixels on the border
-    ind = [0]*6
+    ind = np.zeros(6, int)
     for cid in range(3):
         if cid == 0:
             tmp_max = I.max(axis=1).max(axis=1)
