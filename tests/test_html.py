@@ -5,7 +5,7 @@ from imu.io import writeTxt
 def test_shot_detection():
     fn = '../biomed/umb/'
     out = html_shot(frame_name = 'im_every1/%04d.png',\
-                   file_result = './shot.js', frame_fps=1)
+                   file_result = './shot.js', frame_num = 2432, frame_fps=1)
     writeTxt(fn + 'shot_detection.html', out.getHtml())
 
 
