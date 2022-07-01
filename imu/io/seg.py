@@ -1,7 +1,7 @@
 import numpy as np
 import glob
 
-def getSegType(mid):
+def getSegDtype(mid):
     m_type = np.uint64
     if mid<2**8:
         m_type = np.uint8
