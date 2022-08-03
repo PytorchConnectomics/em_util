@@ -99,6 +99,8 @@ class ngDataset(object):
         # find the mip-level that need to be tiled vs. whole section
         m_mip_id  = [i for i, ratio in enumerate(self.mip_ratio) if (self.volume_size[:2]/(tile_size*np.array(ratio[:2]))).min() <= 1]
         m_mip_id = len(m_mip_id) if len(m_mip_id) == 0 else m_mip_id[0]
+        # invalid chunk_size
+        m_mip_id = min(m_mip_id, np.log2(np.array(tile_size)/self.chunk_size[:2]).astype(int).min())
 
         m_vols  = [None] * num_mip_level
         m_tszA  = [None] * num_mip_level
@@ -136,7 +138,7 @@ class ngDataset(object):
         num_ztile = self.mip_ratio[m_mip_id-1][2]*self.chunk_size[2]
         num_chunk += [(m_szA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
         #num_chunk += [(m_szA[mip_levels[0]][2] - m_osA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
-        for z in range(num_chunk[2]):
+        for z in range(16,num_chunk[2]):
             z0 = z * num_ztile
             z1 = min(self.volume_size[2], (z+1) * num_ztile)
             for y in range(num_chunk[1]):
@@ -202,9 +204,12 @@ class ngDataset(object):
                                 z1g = (zz_o + m_zres[i]) // m_zres[i]
                                 z0g = ((z1g - 1) // self.chunk_size[2]) * self.chunk_size[2]
                                 # check volume align
-                                m_vols[i][x0[i]+m_osA[i][0]: x1[i]+m_osA[i][0], \
-                                    y0[i]+m_osA[i][1]: y1[i]+m_osA[i][1], z0g+m_osA[i][2]: z1g+m_osA[i][2], :] = \
-                                    m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :]
+                                try:
+                                    m_vols[i][x0[i]+m_osA[i][0]: x1[i]+m_osA[i][0], \
+                                        y0[i]+m_osA[i][1]: y1[i]+m_osA[i][1], z0g+m_osA[i][2]: z1g+m_osA[i][2], :] = \
+                                        m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :]
+                                except:
+                                    import pdb; pdb.set_trace()
                                 print(i, z0g, z1g)
                                 #print(i, m_osA[i][2] + z0g, m_osA[i][2] + z1g, m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :].max())
                                 m_tiles[i][:] = 0

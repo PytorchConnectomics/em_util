@@ -1,11 +1,11 @@
 import os, sys
 import numpy as np
 
-def mkdir(fn,opt=0):
-    if opt == 1 :# until the last /
+def mkdir(fn, opt = ''):
+    if opt == 'parent' :# until the last /
         fn = fn[:fn.rfind('/')]
     if not os.path.exists(fn):
-        if opt==2:
+        if 'all' in opt:
             os.makedirs(fn)
         else:
             os.mkdir(fn)

@@ -33,9 +33,12 @@ def segRelabelType(seg):
     m_type = getSegType(seg.max()+1)
     return seg.astype(m_type)
 
-def segRemove(seg, rid):
+def segRemove(seg, bid=None, thres=100):
     rl = np.arange(seg.max()+1).astype(seg.dtype)
-    rl[rid] = 0
+    if bid is None:
+        uid, uc = np.unique(seg, return_counts=True)
+        bid = uid[uc<thres]
+    rl[bid] = 0
     return rl[seg]
 
 def segRelabel(seg, uid=None,nid=None,do_sort=False,do_type=False):
