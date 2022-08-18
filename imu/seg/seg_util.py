@@ -86,4 +86,41 @@ def seg_iou2d(seg1, seg2, ui0=None, bb1=None, bb2=None):
             out[j,4] = uc3.max()
     return out
 
+def relabel(seg, do_dtype = False):
+    if seg is None or seg.max()==0:
+        return seg
+    uid = np.unique(seg)
+    uid = uid[uid > 0]
+    max_id = int(max(uid))
+    mapping = np.zeros(max_id + 1, dtype = seg.dtype)
+    mapping[uid] = np.arange(1, len(uid) + 1)
+    if do_dtype:
+        return relabelDtype(mapping[seg])
+    else:
+        return mapping[seg]
+
+def relabelDtype(seg):
+    max_id = seg.max()
+    m_type = np.uint64
+    if max_id<2**8:
+        m_type = np.uint8
+    elif max_id<2**16:
+        m_type = np.uint16
+    elif max_id<2**32:
+        m_type = np.uint32
+    return seg.astype(m_type)
+
+
+def seg_postprocess(seg, sids=[]):
+    # watershed fill the unlabeled part
+    if seg.ndim == 3:
+        for z in range(seg.shape[0]):
+            seg[z] = mahotas.cwatershed(seg[z]==0, seg[z])
+            for sid in sids:
+                tmp = binary_fill_holes(seg[z]==sid)
+                seg[z][tmp>0] = sid
+    elif seg.ndim == 2:
+        seg = mahotas.cwatershed(seg==0, seg)
+    return seg
+
 

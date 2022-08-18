@@ -138,7 +138,8 @@ class ngDataset(object):
         num_ztile = self.mip_ratio[m_mip_id-1][2]*self.chunk_size[2]
         num_chunk += [(m_szA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
         #num_chunk += [(m_szA[mip_levels[0]][2] - m_osA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
-        for z in range(16,num_chunk[2]):
+        #for z in range(16,num_chunk[2]):
+        for z in range(num_chunk[2]):
             z0 = z * num_ztile
             z1 = min(self.volume_size[2], (z+1) * num_ztile)
             for y in range(num_chunk[1]):

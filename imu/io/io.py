@@ -10,6 +10,31 @@ def mkdir(fn, opt = ''):
         else:
             os.mkdir(fn)
 
+def readVol(filename, z=None, kk=None):
+    import h5py,zarr
+    if z is not None and '%' in filename:
+        filename = filename % z
+
+    if filename[-2:] == 'h5':
+        tmp = h5py.File(filename,'r')
+        if kk is None:
+            kk = list(tmp)[0]
+        out = np.array(tmp[kk][z])
+    elif filename[-3:] == 'zip':
+        tmp = zarr.open_group(filename)
+        if kk is None:
+            kk = tmp.info_items()[-1][1]
+            if ',' in kk:
+                kk = kk[:kk.find(',')]
+        out = np.array(tmp[kk][z])
+    elif filename[-3:] in ['jpg','png']:
+        out = imread(filename)
+    elif filename[-3:] == 'txt':
+        out = np.loadtxt(filename)
+    else:
+        raise "Can't read the file %s" % filename
+    return out
+
 def readImage(filename):
     import imageio
     image = imageio.imread(filename)
