@@ -79,6 +79,9 @@ def readTileVolume(fns, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_type = np.ui
             while blank_lt >= blank_st and not np.any(result[blank_lt]>0):
                 blank_lt -= 1
             result[blank_lt:] = result[blank_lt-1:blank_lt]
+            for z in range(blank_st+1, blank_lt):
+                if not np.any(result[z]>0):
+                    result[z] = result[z-1]
 
     # boundary case
     if bd is not None and max(bd)>0:
