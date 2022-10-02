@@ -8,7 +8,7 @@ import shutil,json
 from imageio import imwrite
 
 def readTileVolume(fns, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_type = np.uint8,\
-             tile_st = [0, 0], tile_ratio = 1, tile_resize_mode = 1, tile_seg = False, tile_blank = 'reflect', volume_sz = None):
+             tile_st = [0, 0], tile_ratio = 1, tile_resize_mode = 1, tile_seg = False, tile_bd='reflect', tile_blank = '', volume_sz = None):
     if not isinstance(tile_sz, (list,)):
         tile_sz = [tile_sz, tile_sz]
     if not isinstance(tile_ratio, (list,)):
@@ -67,6 +67,24 @@ def readTileVolume(fns, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_type = np.ui
                         import pdb; pdb.set_trace()
                 else:
                     print('Non-exist: %s'%filename)
+    # blank case
+    if tile_blank != '':
+        blank_st = 0
+        blank_lt = result.shape[0]-1
+        while blank_st<= blank_lt and not np.any(result[blank_st]>0):
+            blank_st += 1
+        if blank_st == blank_lt:
+            print('!! This volume is all 0 !!')
+        else:
+            result[:blank_st] = result[blank_st:blank_st+1]
+            while blank_lt >= blank_st and not np.any(result[blank_lt]>0):
+                blank_lt -= 1
+            result[blank_lt:] = result[blank_lt-1:blank_lt]
+            for z in range(blank_st+1, blank_lt):
+                if not np.any(result[z]>0):
+                    result[z] = result[z-1]
+
+    # boundary case
     if bd is not None and max(bd)>0:
         result = np.pad(result,
                 ((bd[0], bd[1]),
