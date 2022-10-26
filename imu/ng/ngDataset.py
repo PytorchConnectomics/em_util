@@ -160,10 +160,14 @@ class ngDataset(object):
                     
                     for zz in range(z0,z1):
                         zz_o = zz
-                        if ims[0].ndim == 2:
-                            im = ims[zz-z0].transpose((1,0))
+                        if zz-z0 >= ims.shape[0]:
+                            im = np.zeros(ims[0].shape, ims.dtype)
                         else:
-                            im = ims[zz-z0].transpose((1,0,2))
+                            im = ims[zz-z0]
+                        if im.ndim == 2:
+                            im = im.transpose((1,0))
+                        else:
+                            im = im.transpose((1,0,2))
                         sz0 = im.shape
                         # in case the output is not padded for invalid regions
                         full_size_tile = (sz0[0] == m_tszA[0][0])*(sz0[1] == m_tszA[0][1]) 
