@@ -12,7 +12,7 @@ def mkdir(fn, opt = ''):
 
 def readVol(filename, z=None, kk=None):
     # read a folder of images
-    if isinstance(filename, list) or isinstance(z, list):
+    if isinstance(filename, list) or isinstance(z, list) or isinstance(z, range):
         opt = 0
         if isinstance(filename, list):
             im0 = imread(filename[0])
