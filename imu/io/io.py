@@ -30,10 +30,6 @@ def readVol(filename, z=None, kk=None):
             elif opt ==1:
                 fn = filename %z[i]
             out[i] = imread(fn)
-
-    if z is not None and '%' in filename:
-        filename = filename % z
-
     elif filename[-2:] == 'h5':
         import h5py
         tmp = h5py.File(filename,'r')
