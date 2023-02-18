@@ -70,7 +70,7 @@ class ngDataset(object):
         vol.commit_info()
 
     def createTile(self, getVolume, cloudpath = '', data_type = 'im', \
-                   mip_levels = None, tile_size = [512,512], num_thread = 1, do_subdir = False, num_channel = 1):
+                   mip_levels = None, tile_size = [512,512], num_thread = 1, do_subdir = False, num_channel = 1, start_chunk=0):
         from cloudvolume import CloudVolume
         if data_type == 'im':
             m_resize = 1
@@ -138,8 +138,8 @@ class ngDataset(object):
         num_ztile = self.mip_ratio[m_mip_id-1][2]*self.chunk_size[2]
         num_chunk += [(m_szA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
         #num_chunk += [(m_szA[mip_levels[0]][2] - m_osA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
-        #for z in range(16,num_chunk[2]):
-        for z in range(num_chunk[2]):
+        for z in range(start_chunk,num_chunk[2]):
+        #for z in range(num_chunk[2]):
             z0 = z * num_ztile
             z1 = min(self.volume_size[2], (z+1) * num_ztile)
             for y in range(num_chunk[1]):
@@ -160,10 +160,14 @@ class ngDataset(object):
                     
                     for zz in range(z0,z1):
                         zz_o = zz
-                        if ims[0].ndim == 2:
-                            im = ims[zz-z0].transpose((1,0))
+                        if zz-z0 >= ims.shape[0]:
+                            im = np.zeros(ims[0].shape, ims.dtype)
                         else:
-                            im = ims[zz-z0].transpose((1,0,2))
+                            im = ims[zz-z0]
+                        if im.ndim == 2:
+                            im = im.transpose((1,0))
+                        else:
+                            im = im.transpose((1,0,2))
                         sz0 = im.shape
                         # in case the output is not padded for invalid regions
                         full_size_tile = (sz0[0] == m_tszA[0][0])*(sz0[1] == m_tszA[0][1]) 

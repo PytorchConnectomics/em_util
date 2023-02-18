@@ -11,16 +11,36 @@ def mkdir(fn, opt = ''):
             os.mkdir(fn)
 
 def readVol(filename, z=None, kk=None):
-    import h5py,zarr
-    if z is not None and '%' in filename:
-        filename = filename % z
-
-    if filename[-2:] == 'h5':
+    # read a folder of images
+    if isinstance(filename, list) or isinstance(z, list) or isinstance(z, range):
+        opt = 0
+        if isinstance(filename, list):
+            im0 = imread(filename[0])
+            numZ = len(filename)
+        elif isinstance(z, list):
+            im0 = imread(filename%z[0])
+            numZ = len(z)
+            opt = 1
+        sz = list(im0.shape)
+        out = np.zeros([numZ]+sz, im0.dtype)
+        out[0] = im0
+        for i in range(1,numZ):
+            if opt ==0:
+                fn = filename[i]
+            elif opt ==1:
+                fn = filename %z[i]
+            out[i] = imread(fn)
+    elif filename[-2:] == 'h5':
+        import h5py
         tmp = h5py.File(filename,'r')
         if kk is None:
             kk = list(tmp)[0]
-        out = np.array(tmp[kk][z])
+        if z is not None:
+            out = np.array(tmp[kk][z])
+        else:
+            out = np.array(tmp[kk])
     elif filename[-3:] == 'zip':
+        import zarr
         tmp = zarr.open_group(filename)
         if kk is None:
             kk = tmp.info_items()[-1][1]
@@ -28,9 +48,12 @@ def readVol(filename, z=None, kk=None):
                 kk = kk[:kk.find(',')]
         out = np.array(tmp[kk][z])
     elif filename[-3:] in ['jpg','png']:
-        out = imread(filename)
+        import imageio
+        out = imageio.imread(filename)
     elif filename[-3:] == 'txt':
         out = np.loadtxt(filename)
+    elif filename[-3:] == 'npy':
+        out = np.load(filename)
     else:
         raise "Can't read the file %s" % filename
     return out
