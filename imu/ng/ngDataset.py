@@ -266,7 +266,7 @@ class ngDataset(object):
             foldername = cloudpath[7:]
         mkdir(foldername, 2)
 
-        self.writeSkeletonInfo(foldername + '../info', volume_size, resolution)
+        self.writeSkeletonInfo(foldername + '/../info', volume_size, resolution)
 
         with open(foldername + '/0_0_0', 'wb') as outfile:
             total_count=len(coordinates) # coordinates is a list of tuples (x,y,z) 

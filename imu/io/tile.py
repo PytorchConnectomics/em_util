@@ -73,7 +73,7 @@ def readTileVolume(fns, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_type = np.ui
         blank_lt = result.shape[0]-1
         while blank_st<= blank_lt and not np.any(result[blank_st]>0):
             blank_st += 1
-        if blank_st == blank_lt:
+        if blank_st == blank_lt+1:
             print('!! This volume is all 0 !!')
         else:
             result[:blank_st] = result[blank_st:blank_st+1]
