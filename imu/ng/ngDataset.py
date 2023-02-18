@@ -69,8 +69,12 @@ class ngDataset(object):
         vol = CloudVolume(cloudpath, info=info)
         vol.commit_info()
 
+    def createSetup(self, data_type):
+        pass
+
     def createTile(self, getVolume, cloudpath = '', data_type = 'im', \
-                   mip_levels = None, tile_size = [512,512], num_thread = 1, do_subdir = False, num_channel = 1, start_chunk=0):
+                   mip_levels = None, tile_size = [512,512], num_thread = 1, do_subdir = False, num_channel = 1, start_chunk=0,\
+                  insert_vol_size=[0,0,0], insert_vol_offset=[0,0,0]):
         from cloudvolume import CloudVolume
         if data_type == 'im':
             m_resize = 1
