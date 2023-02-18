@@ -255,7 +255,7 @@ class ngDataset(object):
     def createSkeleton(self, coordinates, cloudpath='', volume_size=None, resolution=None):
         # coordinates is a list of tuples (x,y,z)
         if cloudpath == '':
-            cloudpath = self.cloudpath + '/skeletons/spatial0/'
+            cloudpath = os.path.join(self.cloudpath,  'skeletons')
         if volume_size is None:
             volume_size = self.volume_size
         if resolution is None:
@@ -263,12 +263,14 @@ class ngDataset(object):
 
         foldername = cloudpath
         if 'file' == cloudpath[:4]:
+            # convert from cloudvolume path to local path
             foldername = cloudpath[7:]
-        mkdir(foldername, 2)
+        mkdir(foldername)
+        mkdir(os.path.join(foldername, 'spatial0'))
 
-        self.writeSkeletonInfo(foldername + '/../info', volume_size, resolution)
+        self.writeSkeletonInfo(os.path.join(foldername, 'info'), volume_size, resolution)
 
-        with open(foldername + '/0_0_0', 'wb') as outfile:
+        with open(os.path.join(foldername, 'spatial0', '0_0_0'), 'wb') as outfile:
             total_count=len(coordinates) # coordinates is a list of tuples (x,y,z) 
             buf = struct.pack('<Q',total_count)
             for (x,y,z) in coordinates:
