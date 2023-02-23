@@ -47,9 +47,12 @@ def readVol(filename, z=None, kk=None):
             if ',' in kk:
                 kk = kk[:kk.find(',')]
         out = np.array(tmp[kk][z])
-    elif filename[-3:] in ['jpg','png']:
+    elif filename[-3:] in ['jpg','png','tif','iff']:
         import imageio
-        out = imageio.imread(filename)
+        if z is None: #image
+            out = imageio.imread(filename)
+        else: # volume data (tif)
+            out = imageio.volread(filename)
     elif filename[-3:] == 'txt':
         out = np.loadtxt(filename)
     elif filename[-3:] == 'npy':
