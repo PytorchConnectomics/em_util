@@ -163,7 +163,6 @@ class ngDataset(object):
                                     x0[mip_levels[0]], x1[mip_levels[0]])
                     
                     for zz in range(z0,z1):
-                        zz_o = zz
                         if zz-z0 >= ims.shape[0]:
                             im = np.zeros(ims[0].shape, ims.dtype)
                         else:
@@ -196,42 +195,46 @@ class ngDataset(object):
                                     im[:,:,c] = zoom(im0[:,:,c], sz_r[:2], order=m_resize)
 
                             # save image into tiles
-                            if zz_o % m_zres[i] == 0:
-                                zzl = (zz_o // m_zres[i]) % (self.chunk_size[2])
-                                if i < m_mip_id: # whole tile 
+                            if zz % m_zres[i] == 0:
+                                zzl = (zz // m_zres[i]) % (self.chunk_size[2])
+                                if i < m_mip_id: # write the whole tile 
                                     m_tiles[i][:im.shape[0], :im.shape[1], zzl] = im.reshape(m_tiles[i][:im.shape[0], :im.shape[1], zzl].shape)
-                                else: # piece into one slice
-                                    tmp = m_tiles[i][x0[i]: x1[i], \
-                                               y0[i]: y1[i], zzl]
-                                    tmp[:] = im[:(x1[i]-x0[i]), :(y1[i]-y0[i])].reshape(tmp.shape)
+                                else: # write into the whole section
+                                    if im[:(x1[i]-x0[i]), :(y1[i]-y0[i])].max()>0:
+                                        tmp = m_tiles[i][x0[i]: x1[i], \
+                                                   y0[i]: y1[i], zzl]
+                                        tmp[:] = im[:(x1[i]-x0[i]), :(y1[i]-y0[i])].reshape(tmp.shape)
+                            print(i,zz)
+
                         # < mipI: write for each tile 
-                        # save tile into cloudvolume
                         for i in [ii for ii in mip_levels if ii < m_mip_id]:
                             # chunk filled or last image
-                            if (zz_o + 1) % (m_zres[i] * self.chunk_size[2]) == 0 or (z == num_chunk[2] - 1) * (zz == z1 - 1):
+                            if (zz + 1) % (m_zres[i] * self.chunk_size[2]) == 0 or (z == num_chunk[2] - 1) * (zz == z1 - 1):
                                 # take the ceil for the last chunk
-                                z1g = (zz_o + m_zres[i]) // m_zres[i]
+                                z1g = (zz + m_zres[i]) // m_zres[i]
                                 z0g = ((z1g - 1) // self.chunk_size[2]) * self.chunk_size[2]
                                 # check volume align
-                                try:
+                                if m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :].max()>0:
                                     m_vols[i][x0[i]+m_osA[i][0]: x1[i]+m_osA[i][0], \
                                         y0[i]+m_osA[i][1]: y1[i]+m_osA[i][1], z0g+m_osA[i][2]: z1g+m_osA[i][2], :] = \
                                         m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :]
-                                except:
-                                    import pdb; pdb.set_trace()
-                                print(i, z0g, z1g)
-                                #print(i, m_osA[i][2] + z0g, m_osA[i][2] + z1g, m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :].max())
-                                m_tiles[i][:] = 0
-            # >= mipI: write for each secion
-            for i in [ii for ii in mip_levels if ii >= m_mip_id]:
-                z1_o = z1
-                if z1_o % (m_zres[i] * self.chunk_size[2]) == 0 or z == num_chunk[2] - 1:
-                    z1g = (z1_o + m_zres[i] - 1) // m_zres[i]
-                    z0g = z1g - self.chunk_size[2]
-                    if z1_o % (m_zres[i] * self.chunk_size[2]) != 0: # last unfilled chunk
-                        z0g = (z1g // self.chunk_size[2]) * self.chunk_size[2]
-                    m_vols[i][m_osA[i][0]:, m_osA[i][1]:, z0g+m_osA[i][2]: z1g+m_osA[i][2], :] = m_tiles[i][:, :, : z1g - z0g, :]
-                    m_tiles[i][:] = 0
+                                    print(i, z0g, z1g)
+                                    #print(i, m_osA[i][2] + z0g, m_osA[i][2] + z1g, m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :].max())
+                                    m_tiles[i][:] = 0
+                        # >= mipI: write for each secion
+                        # in one zchunk, there can be multiple chunk in z
+                        for i in [ii for ii in mip_levels if ii >= m_mip_id]:
+                            if (zz+1) % (m_zres[i] * self.chunk_size[2]) == 0 or zz == z1-1:
+                                z1g = (zz + 1 + m_zres[i] - 1) // m_zres[i]
+                                z0g = z1g - self.chunk_size[2]
+                                if (zz+1) % (m_zres[i] * self.chunk_size[2]) != 0: # last unfilled chunk
+                                    z0g = (z1g // self.chunk_size[2]) * self.chunk_size[2]
+                                if m_tiles[i][:, :, : z1g - z0g, :].max()>0:
+                                    try:
+                                        m_vols[i][m_osA[i][0]:, m_osA[i][1]:, z0g+m_osA[i][2]: z1g+m_osA[i][2], :] = m_tiles[i][:, :, : z1g - z0g, :]
+                                    except:
+                                        import pdb; pdb.set_trace()
+                                    m_tiles[i][:] = 0
 
     def createMesh(self, cloudpath='', mip_level=0, volume_size=[256,256,100], \
                    num_thread = 1, dust_threshold = None, do_subdir = False, object_ids = None):
