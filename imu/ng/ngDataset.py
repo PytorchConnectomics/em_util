@@ -101,7 +101,7 @@ class ngDataset(object):
         # < mipI: save each tile
         # >= mipI: save each slice
         # find the mip-level that need to be tiled vs. whole section
-        m_mip_id  = [i for i, ratio in enumerate(self.mip_ratio) if (self.volume_size[:2]/(tile_size*np.array(ratio[:2]))).min() <= 1]
+        m_mip_id  = [i for i, ratio in enumerate(self.mip_ratio) if (self.volume_size[:2]/(tile_size*np.array(ratio[:2]))).max() <= 1]
         m_mip_id = len(m_mip_id) if len(m_mip_id) == 0 else m_mip_id[0]
         # invalid chunk_size
         m_mip_id = min(m_mip_id, np.log2(np.array(tile_size)/self.chunk_size[:2]).astype(int).min())
