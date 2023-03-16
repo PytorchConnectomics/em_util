@@ -11,6 +11,7 @@ def mkdir(fn, opt = ''):
             os.mkdir(fn)
 
 def readVol(filename, z=None, kk=None):
+    from imageio import imread
     # read a folder of images
     if isinstance(filename, list) or isinstance(z, list) or isinstance(z, range):
         opt = 0
