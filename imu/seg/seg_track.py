@@ -23,6 +23,7 @@ def predToSeg2d(seg, th_opt = [0, 0.9*255]):
             tmp = imToSeg_2d(seg[z], th_hole, th_small,seed_footprint)
         elif th_opt[0] == -1: # direct assignment
             tmp = seg[z]
+        tmp = tmp.astype(np.uint32)
         tmp[tmp>0] += mid
         seg_cc[z] = tmp
         mid = tmp.max()
