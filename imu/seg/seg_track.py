@@ -77,3 +77,8 @@ def seg2dToGlobal(seg, mapping=None, mid=None, th_sz=-1):
     if th_sz>0:
         seg=remove_small_objects(seg, th_sz)
     return seg
+
+def seg2dTo3d(seg, iou, th_iou = 0.1, th_sz = -1):
+    matches = iouToMatches(iou, th_iou)
+    seg = seg2dToGlobal(seg, mapping=None, matches, th_sz)
+    return seg
