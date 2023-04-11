@@ -162,7 +162,6 @@ class ngDataset(object):
                                     y0[mip_levels[0]], y1[mip_levels[0]], \
                                     x0[mip_levels[0]], x1[mip_levels[0]])
                     
-                    import pdb; pdb.set_trace()
                     for zz in range(z0,z0+ims.shape[0]):
                         if zz-z0 >= ims.shape[0]:
                             im = np.zeros(ims[0].shape, ims.dtype)
@@ -232,10 +231,7 @@ class ngDataset(object):
                                     if (zz+1) % (m_zres[i] * self.chunk_size[2]) != 0: # last unfilled chunk
                                         z0g = (z1g // self.chunk_size[2]) * self.chunk_size[2]
                                     if m_tiles[i][:, :, : z1g - z0g, :].max()>0:
-                                        try:
-                                            m_vols[i][m_osA[i][0]:, m_osA[i][1]:, z0g+m_osA[i][2]: z1g+m_osA[i][2], :] = m_tiles[i][:, :, : z1g - z0g, :]
-                                        except:
-                                            import pdb; pdb.set_trace()
+                                        m_vols[i][m_osA[i][0]:, m_osA[i][1]:, z0g+m_osA[i][2]: z1g+m_osA[i][2], :] = m_tiles[i][:, :, : z1g - z0g, :]
                                         m_tiles[i][:] = 0
 
     def createMesh(self, cloudpath='', mip_level=0, volume_size=[256,256,100], \
