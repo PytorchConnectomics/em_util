@@ -91,7 +91,10 @@ def rgbToSeg(seg):
     if seg.ndim==2 or seg.shape[-1]==1:
         return np.squeeze(seg)
     elif seg.ndim == 3: # 1 rgb image
-        return seg[:,:,0].astype(np.uint32)*65536+seg[:,:,1].astype(np.uint32)*256+seg[:,:,2].astype(np.uint32)
+        if (seg[:,:,1] != seg[:,:,2]).any() or (seg[:,:,0] != seg[:,:,2]).any(): 
+            return seg[:,:,0].astype(np.uint32)*65536+seg[:,:,1].astype(np.uint32)*256+seg[:,:,2].astype(np.uint32)
+        else: # gray image saved into 3-channel
+            return seg[:,:,0]
     elif seg.ndim == 4: # n rgb image
         return seg[:,:,:,0].astype(np.uint32)*65536+seg[:,:,:,1].astype(np.uint32)*256+seg[:,:,:,2].astype(np.uint32)
 

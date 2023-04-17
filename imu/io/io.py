@@ -10,8 +10,9 @@ def mkdir(fn, opt = ''):
         else:
             os.mkdir(fn)
 
-def readVol(filename, z=None, kk=None):
+def readVol(filename, z=None, kk=None, image_type='im'):
     from imageio import imread
+    # image_type='seg': 1-channel
     # read a folder of images
     if isinstance(filename, list) or isinstance(z, list) or isinstance(z, range):
         opt = 0
@@ -22,6 +23,8 @@ def readVol(filename, z=None, kk=None):
             im0 = imread(filename%z[0])
             numZ = len(z)
             opt = 1
+        if image_type == 'seg': # force it to be 1-dim
+            im0 = rgbToSeg(im0)
         sz = list(im0.shape)
         out = np.zeros([numZ]+sz, im0.dtype)
         out[0] = im0
@@ -30,7 +33,10 @@ def readVol(filename, z=None, kk=None):
                 fn = filename[i]
             elif opt ==1:
                 fn = filename %z[i]
-            out[i] = imread(fn)
+            tmp = imread(fn)
+            if image_type == 'seg': # force it to be 1-dim
+                tmp = rgbToSeg(tmp)
+            out[i] = tmp
     elif filename[-2:] == 'h5':
         import h5py
         tmp = h5py.File(filename,'r')
