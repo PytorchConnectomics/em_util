@@ -27,6 +27,8 @@ def seg_iou3d(seg1, seg2, ui0=None):
 
     if ui0 is None:
         ui0=ui
+    if len(ui0) == 0:
+        return None
 
     out = np.zeros((len(ui0),5),int)
     bbs = get_bb_all3d(seg1,uid=ui0)[:,1:]
@@ -49,12 +51,15 @@ def seg_iou2d(seg1, seg2, ui0=None, bb1=None, bb2=None):
         ui,uc = np.unique(seg1,return_counts=True)
         uc=uc[ui>0];ui=ui[ui>0]
     else:
+        # should contain the seg count
+        assert bb1.shape[1]==6
         ui = bb1[:,0]
         uc = bb1[:,-1]
 
     if bb2 is None:
         ui2, uc2 = np.unique(seg2,return_counts=True)
     else:
+        assert bb2.shape[1]==6
         ui2 = bb2[:,0]
         uc2 = bb2[:,-1]
 
@@ -71,6 +76,9 @@ def seg_iou2d(seg1, seg2, ui0=None, bb1=None, bb2=None):
             # make sure the order matches..
             bb1 = bb1[np.in1d(bb1[:,0], ui0)]
             ui0 = bb1[:,0] 
+
+    if len(ui0) == 0:
+        return None
 
     out = np.zeros((len(ui0),5),int)
     out[:,0] = ui0

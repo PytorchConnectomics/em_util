@@ -5,7 +5,7 @@ def get_bb(seg, do_count=False):
     dim = len(seg.shape)
     a=np.where(seg>0)
     if len(a[0])==0:
-        return [-1]*dim*2
+        return None
     out=[]
     for i in range(dim):
         out+=[a[i].min(), a[i].max()]
@@ -20,8 +20,7 @@ def get_bb_all2d(seg, do_count=False, uid=None):
         uid = np.unique(seg)
         uid = uid[uid>0]
     if len(uid) == 0:
-        return np.zeros((1,5+do_count),dtype=np.uint32)
-
+        return None
     um = uid.max()
     out = np.zeros((1+int(um),5+do_count),dtype=np.uint32)
     out[:,0] = np.arange(out.shape[0])
