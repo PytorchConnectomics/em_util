@@ -73,8 +73,8 @@ class ngDataset(object):
         pass
 
     def createTile(self, getVolume, cloudpath = '', data_type = 'im', \
-                   mip_levels = None, tile_size = [512,512], num_thread = 1, do_subdir = False, num_channel = 1, start_chunk=0,\
-                  insert_vol_size=[0,0,0], insert_vol_offset=[0,0,0]):
+                   mip_levels = None, tile_size = [512,512], num_thread = 1, do_subdir = False, num_channel = 1, start_chunk = 0, step_chunk = 1,\
+                  insert_vol_size = [0,0,0], insert_vol_offset = [0,0,0]):
         from cloudvolume import CloudVolume
         if data_type == 'im':
             m_resize = 1
@@ -142,7 +142,7 @@ class ngDataset(object):
         num_ztile = self.mip_ratio[max(0,m_mip_id-1)][2]*self.chunk_size[2]
         num_chunk += [(m_szA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
         #num_chunk += [(m_szA[mip_levels[0]][2] - m_osA[mip_levels[0]][2] + num_ztile - 1) // num_ztile] 
-        for z in range(start_chunk,num_chunk[2]):
+        for z in range(start_chunk,num_chunk[2], step_chunk):
         #for z in range(num_chunk[2]):
             z0 = z * num_ztile
             z1 = min(self.volume_size[2], (z+1) * num_ztile)
