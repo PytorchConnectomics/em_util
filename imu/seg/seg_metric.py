@@ -3,10 +3,11 @@ import h5py
 import scipy.sparse as sparse
 from scipy.ndimage.morphology import binary_fill_holes
 
+
 def adapted_rand(seg, gt, all_stats=False):
     """Compute Adapted Rand error as defined by the SNEMI3D contest [1]
-    Formula is given as 1 - the maximal F-score of the Rand index 
-    (excluding the zero component of the original labels). Adapted 
+    Formula is given as 1 - the maximal F-score of the Rand index
+    (excluding the zero component of the original labels). Adapted
     from the SNEMI3D MATLAB script, hence the strange style.
     Parameters
     ----------
@@ -37,13 +38,15 @@ def adapted_rand(seg, gt, all_stats=False):
     n_labels_A = np.amax(segA) + 1
     n_labels_B = np.amax(segB) + 1
 
-    ones_data = np.ones(n,int)
+    ones_data = np.ones(n, int)
 
-    p_ij = sparse.csr_matrix((ones_data, (segA[:], segB[:])), shape=(n_labels_A, n_labels_B))
+    p_ij = sparse.csr_matrix(
+        (ones_data, (segA[:], segB[:])), shape=(n_labels_A, n_labels_B)
+    )
 
-    a = p_ij[1:n_labels_A,:]
-    b = p_ij[1:n_labels_A,1:n_labels_B]
-    c = p_ij[1:n_labels_A,0].todense()
+    a = p_ij[1:n_labels_A, :]
+    b = p_ij[1:n_labels_A, 1:n_labels_B]
+    c = p_ij[1:n_labels_A, 0].todense()
     d = b.multiply(b)
 
     a_i = np.array(a.sum(1))

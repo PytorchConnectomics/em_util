@@ -1,136 +1,157 @@
-import os, sys
+import os
+import sys
 import numpy as np
+from imageio import imread
+import imageio
+from scipy.ndimage import zoom
+import h5py
 
-def mkdir(fn, opt = ''):
-    if opt == 'parent' :# until the last /
-        fn = fn[:fn.rfind('/')]
+from .seg import rgb_to_seg
+
+
+def mkdir(fn, opt=""):
+    if opt == "parent":  # until the last /
+        fn = fn[: fn.rfind("/")]
     if not os.path.exists(fn):
-        if 'all' in opt:
+        if "all" in opt:
             os.makedirs(fn)
         else:
             os.mkdir(fn)
 
-def readVol(filename, z=None, kk=None, image_type='im'):
-    from imageio import imread
+
+def read_vol(filename, dataset_name=None, z=None, image_type="im"):
     # image_type='seg': 1-channel
     # read a folder of images
-    if isinstance(filename, list) or isinstance(z, list) or isinstance(z, range):
+    if (
+        isinstance(filename, list)
+        or isinstance(z, list)
+        or isinstance(z, range)
+    ):
         opt = 0
         if isinstance(filename, list):
             im0 = imread(filename[0])
             numZ = len(filename)
         elif isinstance(z, list):
-            im0 = imread(filename%z[0])
+            im0 = imread(filename % z[0])
             numZ = len(z)
             opt = 1
-        if image_type == 'seg': # force it to be 1-dim
-            im0 = rgbToSeg(im0)
+        if image_type == "seg":  # force it to be 1-dim
+            im0 = rgb_to_seg(im0)
         sz = list(im0.shape)
-        out = np.zeros([numZ]+sz, im0.dtype)
+        out = np.zeros([numZ] + sz, im0.dtype)
         out[0] = im0
-        for i in range(1,numZ):
-            if opt ==0:
+        for i in range(1, numZ):
+            if opt == 0:
                 fn = filename[i]
-            elif opt ==1:
-                fn = filename %z[i]
+            elif opt == 1:
+                fn = filename % z[i]
             tmp = imread(fn)
-            if image_type == 'seg': # force it to be 1-dim
-                tmp = rgbToSeg(tmp)
+            if image_type == "seg":  # force it to be 1-dim
+                tmp = rgb_to_seg(tmp)
             out[i] = tmp
-    elif filename[-2:] == 'h5':
-        import h5py
-        tmp = h5py.File(filename,'r')
-        if kk is None:
-            kk = list(tmp)[0]
-        if z is not None:
-            out = np.array(tmp[kk][z])
-        else:
-            out = np.array(tmp[kk])
-    elif filename[-3:] == 'zip':
+    elif filename[-2:] == "h5":
+        data_type = '2d' if dataset_name is None else dataset_name 
+        out = read_image(filename, data_type)
+    elif filename[-3:] == "zip":
         import zarr
         tmp = zarr.open_group(filename)
         if kk is None:
             kk = tmp.info_items()[-1][1]
-            if ',' in kk:
-                kk = kk[:kk.find(',')]
+            if "," in kk:
+                kk = kk[: kk.find(",")]
         out = np.array(tmp[kk][z])
-    elif filename[-3:] in ['jpg','png','tif','iff']:
-        import imageio
-        if z is None: #image
+    elif filename[-3:] in ["jpg", "png", "tif", "iff"]:
+        if dataset_name is None:  # image
             out = imageio.imread(filename)
-        else: # volume data (tif)
+        else:  # volume data (tif)
             out = imageio.volread(filename)
-    elif filename[-3:] == 'txt':
+    elif filename[-3:] == "txt":
         out = np.loadtxt(filename)
-    elif filename[-3:] == 'npy':
+    elif filename[-3:] == "npy":
         out = np.load(filename)
     else:
         raise "Can't read the file %s" % filename
     return out
 
-def readImage(filename):
-    import imageio
-    image = imageio.imread(filename)
-    return image
 
-# h5 files
-def readH5(filename, datasetname=None):
-    import h5py
-    fid = h5py.File(filename,'r')
+def read_image(filename, data_type='2d'):
+    if data_type == '2d':  # image
+        out = imageio.imread(filename)
+    else:  # volume data (tif)
+        out = imageio.volread(filename)
+    return out
+
+
+def read_h5(filename, datasetname=None):
+    # h5 files
+    fid = h5py.File(filename, "r")
     if datasetname is None:
-        if sys.version[0]=='2': # py2
+        if sys.version[0] == "2":  # py2
             datasetname = fid.keys()
-        else: # py3
+        else:  # py3
             datasetname = list(fid)
     if len(datasetname) == 1:
         datasetname = datasetname[0]
     if isinstance(datasetname, (list,)):
-        out=[None]*len(datasetname)
-        for di,d in enumerate(datasetname):
+        out = [None] * len(datasetname)
+        for di, d in enumerate(datasetname):
             out[di] = np.array(fid[d])
         return out
     else:
         return np.array(fid[datasetname])
 
-def writeH5(filename, dtarray, datasetname='main'):
+
+def write_h5(filename, dtarray, datasetname="main"):
     import h5py
-    fid=h5py.File(filename,'w')
+
+    fid = h5py.File(filename, "w")
     if isinstance(datasetname, (list,)):
-        for i,dd in enumerate(datasetname):
-            ds = fid.create_dataset(dd, dtarray[i].shape, compression="gzip", dtype=dtarray[i].dtype)
+        for i, dd in enumerate(datasetname):
+            ds = fid.create_dataset(
+                dd,
+                dtarray[i].shape,
+                compression="gzip",
+                dtype=dtarray[i].dtype,
+            )
             ds[:] = dtarray[i]
     else:
-        ds = fid.create_dataset(datasetname, dtarray.shape, compression="gzip", dtype=dtarray.dtype)
+        ds = fid.create_dataset(
+            datasetname, dtarray.shape, compression="gzip", dtype=dtarray.dtype
+        )
         ds[:] = dtarray
     fid.close()
 
-def readTxt(filename):
-    a= open(filename)
+
+def read_txt(filename):
+    a = open(filename)
     content = a.readlines()
     a.close()
     return content
 
-def writeTxt(filename, content):
-    a= open(filename,'w')
+
+def write_txt(filename, content):
+    a = open(filename, "w")
     if isinstance(content, (list,)):
         for ll in content:
             a.write(ll)
-            if '\n' not in ll:
-                a.write('\n')
+            if "\n" not in ll:
+                a.write("\n")
     else:
         a.write(content)
     a.close()
 
-def writeGif(outname, filenames, ratio=1, duration=0.5):
-    import imageio
-    from scipy.ndimage import zoom
-    out = [None]*len(filenames)
-    for fid,filename in enumerate(filenames):
+
+def write_gif(outname, filenames, ratio=1, duration=0.5):
+    out = [None] * len(filenames)
+    for fid, filename in enumerate(filenames):
         image = imageio.imread(filename)
-        if ratio!=1:
-            if image.ndim==2:
+        if ratio != 1:
+            if image.ndim == 2:
                 image = zoom(image, ratio, order=1)
             else:
-                image = np.stack([zoom(image[:,:,d], ratio, order=1) for d in range(3)],axis=2)
+                image = np.stack(
+                    [zoom(image[:, :, d], ratio, order=1) for d in range(3)],
+                    axis=2,
+                )
         out[fid] = image
-    imageio.mimsave(outname, out, 'GIF', duration=duration)
+    imageio.mimsave(outname, out, "GIF", duration=duration)

@@ -1,5 +1,5 @@
 class html_base(object):
-    def __init__(self, num_col = 7):
+    def __init__(self, num_col=7):
         self.num_col = num_col
 
     def getHeader(self):

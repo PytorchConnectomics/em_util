@@ -1,11 +1,12 @@
 import numpy as np
 import scipy.sparse as sparse
 
+
 def adapted_rand(seg, gt, all_stats=False):
     """Compute Adapted Rand error as defined by the SNEMI3D contest [1]
 
-    Formula is given as 1 - the maximal F-score of the Rand index 
-    (excluding the zero component of the original labels). Adapted 
+    Formula is given as 1 - the maximal F-score of the Rand index
+    (excluding the zero component of the original labels). Adapted
     from the SNEMI3D MATLAB script, hence the strange style.
 
     Parameters
@@ -39,13 +40,15 @@ def adapted_rand(seg, gt, all_stats=False):
     n_labels_A = np.amax(segA) + 1
     n_labels_B = np.amax(segB) + 1
 
-    ones_data = np.ones(n,int)
+    ones_data = np.ones(n, int)
 
-    p_ij = sparse.csr_matrix((ones_data, (segA[:], segB[:])), shape=(n_labels_A, n_labels_B))
+    p_ij = sparse.csr_matrix(
+        (ones_data, (segA[:], segB[:])), shape=(n_labels_A, n_labels_B)
+    )
 
-    a = p_ij[1:n_labels_A,:]
-    b = p_ij[1:n_labels_A,1:n_labels_B]
-    c = p_ij[1:n_labels_A,0].todense()
+    a = p_ij[1:n_labels_A, :]
+    b = p_ij[1:n_labels_A, 1:n_labels_B]
+    c = p_ij[1:n_labels_A, 0].todense()
     d = b.multiply(b)
 
     a_i = np.array(a.sum(1))
@@ -66,18 +69,19 @@ def adapted_rand(seg, gt, all_stats=False):
     else:
         return are
 
+
 # Evaluation code courtesy of Juan Nunez-Iglesias, taken from
 # https://github.com/janelia-flyem/gala/blob/master/gala/evaluate.py
 def voi(reconstruction, groundtruth, ignore_reconstruction=[], ignore_groundtruth=[0]):
     """Return the conditional entropies of the variation of information metric. [1]
 
-    Let X be a reconstruction, and Y a ground truth labelling. The variation of 
+    Let X be a reconstruction, and Y a ground truth labelling. The variation of
     information between the two is the sum of two conditional entropies:
 
         VI(X, Y) = H(X|Y) + H(Y|X).
 
-    The first one, H(X|Y), is a measure of oversegmentation, the second one, 
-    H(Y|X), a measure of undersegmentation. These measures are referred to as 
+    The first one, H(X|Y), is a measure of oversegmentation, the second one,
+    H(Y|X), a measure of undersegmentation. These measures are referred to as
     the variation of information split or merge error, respectively.
 
     Parameters
@@ -97,11 +101,14 @@ def voi(reconstruction, groundtruth, ignore_reconstruction=[], ignore_groundtrut
 
     References
     ----------
-    [1] Meila, M. (2007). Comparing clusterings - an information based 
+    [1] Meila, M. (2007). Comparing clusterings - an information based
     distance. Journal of Multivariate Analysis 98, 873-895.
     """
-    (hyxg, hxgy) = split_vi(reconstruction, groundtruth, ignore_reconstruction, ignore_groundtruth)
+    (hyxg, hxgy) = split_vi(
+        reconstruction, groundtruth, ignore_reconstruction, ignore_groundtruth
+    )
     return (hxgy, hyxg)
+
 
 def split_vi(x, y=None, ignore_x=[0], ignore_y=[0]):
     """Return the symmetric conditional entropies associated with the VI.
@@ -135,9 +142,10 @@ def split_vi(x, y=None, ignore_x=[0], ignore_y=[0]):
     --------
     vi
     """
-    _, _, _ , hxgy, hygx, _, _ = vi_tables(x, y, ignore_x, ignore_y)
+    _, _, _, hxgy, hygx, _, _ = vi_tables(x, y, ignore_x, ignore_y)
     # false merges, false splits
     return np.array([hygx.sum(), hxgy.sum()])
+
 
 def vi_tables(x, y=None, ignore_x=[0], ignore_y=[0]):
     """Return probability tables used for calculating VI.
@@ -184,14 +192,15 @@ def vi_tables(x, y=None, ignore_x=[0], ignore_y=[0]):
     # Calculate log conditional probabilities and entropies
     lpygx = np.zeros(np.shape(px))
     lpygx[nzx] = xlogx(divide_rows(nzpxy, nzpx)).sum(axis=1).ravel()
-                        # \sum_x{p_{y|x} \log{p_{y|x}}}
-    hygx = -(px*lpygx) # \sum_x{p_x H(Y|X=x)} = H(Y|X)
+    # \sum_x{p_{y|x} \log{p_{y|x}}}
+    hygx = -(px * lpygx)  # \sum_x{p_x H(Y|X=x)} = H(Y|X)
 
     lpxgy = np.zeros(np.shape(py))
     lpxgy[nzy] = xlogx(divide_columns(nzpxy, nzpy)).sum(axis=0).ravel()
-    hxgy = -(py*lpxgy)
+    hxgy = -(py * lpxgy)
 
     return [pxy] + list(map(np.asarray, [px, py, hxgy, hygx, lpygx, lpxgy]))
+
 
 def contingency_table(seg, gt, ignore_seg=[0], ignore_gt=[0], norm=True):
     """Return the contingency table for all regions in matched segmentations.
@@ -218,7 +227,7 @@ def contingency_table(seg, gt, ignore_seg=[0], ignore_gt=[0], norm=True):
         labeled `i` in `seg` and `j` in `gt`. (Or the proportion of such voxels
         if `norm=True`.)
     """
-    segr = seg.ravel() 
+    segr = seg.ravel()
     gtr = gt.ravel()
     ignored = np.zeros(segr.shape, np.bool)
     data = np.ones(len(gtr))
@@ -231,6 +240,7 @@ def contingency_table(seg, gt, ignore_seg=[0], ignore_gt=[0], norm=True):
     if norm:
         cont /= float(cont.sum())
     return cont
+
 
 def divide_columns(matrix, row, in_place=False):
     """Divide each column of `matrix` by the corresponding element in `row`.
@@ -270,6 +280,7 @@ def divide_columns(matrix, row, in_place=False):
         out /= row[np.newaxis, :]
     return out
 
+
 def divide_rows(matrix, column, in_place=False):
     """Divide each row of `matrix` by the corresponding element in `column`.
 
@@ -308,6 +319,7 @@ def divide_rows(matrix, column, in_place=False):
         out /= column[:, np.newaxis]
     return out
 
+
 def xlogx(x, out=None, in_place=False):
     """Compute x * log_2(x).
 
@@ -341,10 +353,10 @@ def xlogx(x, out=None, in_place=False):
     z[nz] *= np.log2(z[nz])
     return y
 
+
 # Functions for evaluating binary segmentation
 def confusion_matrix(pred, gt, thres=0.5):
-    """Calculate the confusion matrix given a probablility threshold in (0,1).
-    """
+    """Calculate the confusion matrix given a probablility threshold in (0,1)."""
     TP = np.sum((gt == 1) & (pred > thres))
     FP = np.sum((gt == 0) & (pred > thres))
     TN = np.sum((gt == 0) & (pred <= thres))
@@ -353,7 +365,7 @@ def confusion_matrix(pred, gt, thres=0.5):
 
 
 def get_binary_jaccard(pred, gt, thres=[0.5]):
-    """Evaluate the binary prediction at multiple thresholds using the Jaccard 
+    """Evaluate the binary prediction at multiple thresholds using the Jaccard
     Index, which is also known as Intersection over Union (IoU). If the prediction
     is already binarized, different thresholds will result the same result.
 
@@ -363,19 +375,19 @@ def get_binary_jaccard(pred, gt, thres=[0.5]):
         thres (list): a list of probablility threshold in (0,1). Default: [0.5]
 
     Return:
-        score (numpy.ndarray): a numpy array of shape :math:`(N, 4)`, where :math:`N` is the 
+        score (numpy.ndarray): a numpy array of shape :math:`(N, 4)`, where :math:`N` is the
         number of element(s) in the probability threshold list. The four scores in each line
         are foreground IoU, IoU, precision and recall, respectively.
     """
     score = np.zeros((len(thres), 4))
     for tid, t in enumerate(thres):
         assert 0.0 < t < 1.0, "The range of the threshold should be (0,1)."
-        TP,FP,TN,FN = confusion_matrix(pred, gt, t)
-        
-        precision = float(TP)/(TP+FP)
-        recall = float(TP)/(TP+FN)
-        iou_fg = float(TP)/(TP+FP+FN)
-        iou_bg = float(TN)/(TN+FP+FN)
+        TP, FP, TN, FN = confusion_matrix(pred, gt, t)
+
+        precision = float(TP) / (TP + FP)
+        recall = float(TP) / (TP + FN)
+        iou_fg = float(TP) / (TP + FP + FN)
+        iou_bg = float(TN) / (TN + FP + FN)
         iou = (iou_fg + iou_bg) / 2.0
         score[tid] = np.array([iou_fg, iou, precision, recall])
     return score

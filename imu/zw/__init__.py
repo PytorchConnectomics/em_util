@@ -1,1 +1,1 @@
-from .zwDecoder import *
+from .zw_decoder import *

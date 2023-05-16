@@ -1,8 +1,16 @@
-from .html_base import html_base 
+from .html_base import html_base
+
 
 class html_shot(html_base):
-    def __init__(self, vid_name, frame_name = '%04d.png', frame_start = 0,\
-                frame_fps = 30, file_result ='shot_detection.html', num_col = 5):
+    def __init__(
+        self,
+        vid_name,
+        frame_name="%04d.png",
+        frame_start=0,
+        frame_fps=30,
+        file_result="shot_detection.html",
+        num_col=5,
+    ):
         self.vid_name = vid_name
         self.frame_name = frame_name
         self.frame_start = frame_start
@@ -33,7 +41,13 @@ class html_shot(html_base):
         var frame_start = %d;
         var frame_fps = %d;
         var num_col = %d;
-        """ % (self.vid_name, self.frame_name, self.frame_start, self.frame_fps, self.num_col)
+        """ % (
+            self.vid_name,
+            self.frame_name,
+            self.frame_start,
+            self.frame_fps,
+            self.num_col,
+        )
         out += """
         var shot_start = [0];
         var shot_selection = [0];
@@ -140,4 +154,3 @@ class html_shot(html_base):
         </script>
         """
         return out
-
