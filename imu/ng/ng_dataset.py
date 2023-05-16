@@ -101,11 +101,13 @@ class NgDataset(object):
         cloudpath="",
         data_type="im",
         mip_levels=None,
-        tile_size=[512, 512],
+        tile_size=None,
         num_thread=1,
         do_subdir=False,
         num_channel=1,
     ):
+        if tile_size is None:
+            tile_size = [512, 512]
         if data_type == "im":
             m_resize = 1
             m_dtype = "uint8"
@@ -139,7 +141,7 @@ class NgDataset(object):
             if (self.volume_size[:2] / (tile_size * np.array(ratio[:2]))).max()
             <= 1
         ]
-        m_mip_id = len(m_mip_id) if len(m_mip_id) == 0 else m_mip_id[0]
+        m_mip_id = len(m_mip_id) if not m_mip_id else m_mip_id[0]
         # invalid chunk_size
         m_mip_id = min(
             m_mip_id,
@@ -173,9 +175,9 @@ class NgDataset(object):
             ]
             m_zres[i] = self.mip_ratio[i][2]
             if i >= m_mip_id:
-                # output whole section
+                # output whole section: sometimes #z is smaller than chunk size                
                 m_tiles[i] = np.zeros(
-                    (m_size[i][0], m_size[i][1], self.chunk_size[2], num_channel),
+                    (m_size[i][0], m_size[i][1], min(m_size[i][2], self.chunk_size[2]), num_channel),
                     dtype=m_dtype,
                 )
             else:
@@ -233,7 +235,7 @@ class NgDataset(object):
             num_thread,
             do_subdir,
             num_channel,
-        )
+        )        
         if m_mip_levels[0] < m_mip_id:
             # step 2: do 0-m_mip_id
             # z0,z1,y0,y1,x0,x1: relative coord
@@ -404,9 +406,10 @@ class NgDataset(object):
             num_ztile = m_zres[-1] * self.chunk_size[2]
             num_zchunk = (self.volume_size[2] + num_ztile - 1) // num_ztile
             mip_start = max(m_mip_levels[0], m_mip_id)
+            zstep = self.mip_ratio[mip_start][2]
             for z in range(start_chunk, num_zchunk, step_chunk):
-                z0 = z * num_ztile
-                z1 = min(self.volume_size[2], (z + 1) * num_ztile)
+                z0 = (z * num_ztile) // zstep
+                z1 = min(self.volume_size[2], (z + 1) * num_ztile) // zstep
                 print("do section-chunk: %d/%d" % (z, num_zchunk))
                 ims = getVolume(
                     z0,
@@ -446,9 +449,9 @@ class NgDataset(object):
                                 )
 
                         # save image into tiles
-                        zstep = m_zres[i] // m_zres[mip_start]
-                        if zz % zstep == 0:
-                            zzl = (zz // zstep) % (self.chunk_size[2])
+                        zstep_mip = m_zres[i] // m_zres[mip_start]
+                        if zz % zstep_mip == 0:
+                            zzl = (zz // zstep_mip) % (self.chunk_size[2])
                             try:
                                 m_tiles[i][: im.shape[0], : im.shape[1], zzl] = (
                                     im.reshape(
@@ -462,26 +465,29 @@ class NgDataset(object):
 
                         # < mipI: write for each tile
                         # chunk filled or last image
-                        if (zz + 1) % (zstep * self.chunk_size[2]) == 0 or (
+                        if (zz + 1) % (zstep_mip * self.chunk_size[2]) == 0 or (
                             z == num_zchunk - 1
                         ) * (zz == z1 - 1):
                             # take the ceil for the last chunk
-                            z1g = (zz + 1 + m_zres[i] - 1) // m_zres[i]
+                            z1g = (zz + 1 + zstep_mip - 1) // zstep_mip
                             z0g = z1g - self.chunk_size[2]
                             if (zz + 1) % (
-                                m_zres[i] * self.chunk_size[2]
+                                zstep_mip * self.chunk_size[2]
                             ) != 0:  # last unfilled chunk
                                 z0g = (
                                     z1g // self.chunk_size[2]
                                 ) * self.chunk_size[2]
                             if m_tiles[i][:, :, : z1g - z0g, :].max() > 0:
-                                m_vols[i][
-                                    m_oset[i][0] :,
-                                    m_oset[i][1] :,
-                                    z0g + m_oset[i][2] : z1g + m_oset[i][2],
-                                    :,
-                                ] = m_tiles[i][:, :, : z1g - z0g, :]
-                                m_tiles[i][:] = 0
+                                try:
+                                    m_vols[i][
+                                        m_oset[i][0] :,
+                                        m_oset[i][1] :,
+                                        z0g + m_oset[i][2] : z1g + m_oset[i][2],
+                                        :,
+                                    ] = m_tiles[i][:, :, : z1g - z0g, :]
+                                    m_tiles[i][:] = 0
+                                except:
+                                    import pdb;pdb.set_trace()
 
     def create_tile(
         self,
