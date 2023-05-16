@@ -161,7 +161,7 @@ class NgDataset(object):
             if do_subdir:
                 m_vols[i].meta.name_sep = "/"
             ratio_i = [
-                self.mip_ratio[i][j] // self.mip_ratio[0][j] for j in range(2)
+                self.mip_ratio[i][j] // self.mip_ratio[m_mip_levels[0]][j] for j in range(2)
             ]
             m_tile_size[i] = [tile_size[j] // ratio_i[j] for j in range(2)] + [
                 num_channel
@@ -248,7 +248,7 @@ class NgDataset(object):
             # keep the size
             # num_chunk = [(m_size[mip_levels[0]][x] + m_tile_size[mip_levels[0]][x]-1 - m_oset[mip_levels[0]][x]) // m_tile_size[mip_levels[0]][x] for x in range(2)]
             num_chunk = [
-                (m_size[0][x] + m_tile_size[0][x] - 1) // m_tile_size[0][x]
+                (m_size[m_mip_levels[0]][x] + m_tile_size[m_mip_levels[0]][x] - 1) // m_tile_size[m_mip_levels[0]][x]
                 for x in range(2)
             ]
 
@@ -256,12 +256,13 @@ class NgDataset(object):
             # so that the tile-based mip-levels can output tiles
             num_ztile = m_zres[max(0, m_mip_id - 1)] * self.chunk_size[2]
             num_zchunk = (self.volume_size[2] + num_ztile - 1) // num_ztile
+            zstep = self.mip_ratio[m_mip_levels[0]][2]
             for z in range(start_chunk, num_zchunk, step_chunk):
-                z0 = z * num_ztile
-                z1 = min(self.volume_size[2], (z + 1) * num_ztile)
+                z0 = (z * num_ztile) // zstep
+                z1 = min(self.volume_size[2], (z + 1) * num_ztile) // zstep
                 for y, x in itertools.product(range(num_chunk[1]), range(num_chunk[0])):            
                     print(
-                        f"do tile-chunk: {z}/{num_zchunk}, {num_chunk[1]},"
+                        f"do tile-chunk: {z}/{num_zchunk}, {y}/{num_chunk[1]},"
                         "                                 "
                         f" {x}/{num_chunk[0]}"
                     )
@@ -278,10 +279,10 @@ class NgDataset(object):
                     ims = getVolume(
                         z0,
                         z1,
-                        y0[0],
-                        y1[0],
-                        x0[0],
-                        x1[0],
+                        y0[m_mip_levels[0]],
+                        y1[m_mip_levels[0]],
+                        x0[m_mip_levels[0]],
+                        x1[m_mip_levels[0]],
                         self.mip_ratio[m_mip_levels[0]],
                     )
 
@@ -293,10 +294,10 @@ class NgDataset(object):
                         im = im.transpose((1, 0)) if im.ndim == 2 else im.transpose((1, 0, 2))
                         sz0 = im.shape
                         # in case the output is not padded for invalid regions
-                        full_size_tile = (sz0[0] == m_tile_size[0][0]) * (
-                            sz0[1] == m_tile_size[0][1]
+                        full_size_tile = (sz0[0] == m_tile_size[m_mip_levels[0]][0]) * (
+                            sz0[1] == m_tile_size[m_mip_levels[0]][1]
                         )
-                        for i in range(m_mip_id - m_mip_levels[0]):
+                        for i in range(m_mip_levels[0], m_mip_id):
                             # iterative bilinear downsample
                             # bug: last border tiles, not full size ...
                             sz0 = np.array(im.shape)
@@ -325,8 +326,9 @@ class NgDataset(object):
                                     )
 
                             # save image into tiles
-                            if zz % m_zres[i] == 0:
-                                zzl = (zz // m_zres[i]) % (
+                            zstep_mip = m_zres[i] // m_zres[m_mip_levels[0]]
+                            if zz % zstep_mip == 0:
+                                zzl = (zz // zstep_mip) % (
                                     self.chunk_size[2]
                                 )
                                 if i < m_mip_id:  # write the whole tile
@@ -360,12 +362,12 @@ class NgDataset(object):
                             # < mipI: write for each tile
                             # chunk filled or last image
                             if (zz + 1) % (
-                                m_zres[i] * self.chunk_size[2]
-                            ) == 0 or (z == num_chunk[2] - 1) * (
+                                zstep_mip * self.chunk_size[2]
+                            ) == 0 or (z == num_zchunk - 1) * (
                                 zz == z1 - 1
                             ):
                                 # take the ceil for the last chunk
-                                z1g = (zz + m_zres[i]) // m_zres[i]
+                                z1g = (zz + 1 + zstep_mip - 1) // zstep_mip
                                 z0g = (
                                     (z1g - 1) // self.chunk_size[2]
                                 ) * self.chunk_size[2]
@@ -396,7 +398,6 @@ class NgDataset(object):
                                         : z1g - z0g,
                                         :,
                                     ]
-                                    # print(i, z0g, z1g)
                                     # print(i, m_oset[i][2] + z0g, m_oset[i][2] + z1g, m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :].max())
                                     m_tiles[i][:] = 0
         if m_mip_levels[-1] >= m_mip_id:
@@ -470,13 +471,9 @@ class NgDataset(object):
                         ) * (zz == z1 - 1):
                             # take the ceil for the last chunk
                             z1g = (zz + 1 + zstep_mip - 1) // zstep_mip
-                            z0g = z1g - self.chunk_size[2]
-                            if (zz + 1) % (
-                                zstep_mip * self.chunk_size[2]
-                            ) != 0:  # last unfilled chunk
-                                z0g = (
-                                    z1g // self.chunk_size[2]
-                                ) * self.chunk_size[2]
+                            # z0g = z1g - self.chunk_size[2]
+                            # outlier: last unfilled chunk
+                            z0g = ((z1g - 1) // self.chunk_size[2]) * self.chunk_size[2]
                             if m_tiles[i][:, :, : z1g - z0g, :].max() > 0:
                                 try:
                                     m_vols[i][
