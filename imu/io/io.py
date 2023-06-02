@@ -50,8 +50,7 @@ def read_vol(filename, dataset_name=None, z=None, image_type="im"):
                 tmp = rgb_to_seg(tmp)
             out[i] = tmp
     elif filename[-2:] == "h5":
-        data_type = '2d' if dataset_name is None else dataset_name 
-        out = read_image(filename, data_type)
+        out = read_h5(filename, dataset_name)
     elif filename[-3:] == "zip":
         import zarr
         tmp = zarr.open_group(filename)
@@ -61,10 +60,8 @@ def read_vol(filename, dataset_name=None, z=None, image_type="im"):
                 kk = kk[: kk.find(",")]
         out = np.array(tmp[kk][z])
     elif filename[-3:] in ["jpg", "png", "tif", "iff"]:
-        if dataset_name is None:  # image
-            out = imageio.imread(filename)
-        else:  # volume data (tif)
-            out = imageio.volread(filename)
+        data_type = '2d' if dataset_name is None else dataset_name 
+        out = read_image(filename, data_type)
     elif filename[-3:] == "txt":
         out = np.loadtxt(filename)
     elif filename[-3:] == "npy":
