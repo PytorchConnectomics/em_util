@@ -79,23 +79,20 @@ def read_image(filename, data_type='2d'):
     return out
 
 
-def read_h5(filename, datasetname=None):
-    # h5 files
-    fid = h5py.File(filename, "r")
-    if datasetname is None:
-        if sys.version[0] == "2":  # py2
-            datasetname = fid.keys()
-        else:  # py3
-            datasetname = list(fid)
-    if len(datasetname) == 1:
-        datasetname = datasetname[0]
-    if isinstance(datasetname, (list,)):
-        out = [None] * len(datasetname)
-        for di, d in enumerate(datasetname):
+def read_h5(filename, datasetname=None, chunk_id=0, chunk_num=1):
+    fid = h5py.File(filename, 'r')
+    if datasetname is None:        
+        datasetname = fid.keys() if sys.version[0]=='2' else list(fid)    
+
+    out = [None] * len(datasetname)
+    for di, d in enumerate(datasetname):            
+        if chunk_num == 1:
             out[di] = np.array(fid[d])
-        return out
-    else:
-        return np.array(fid[datasetname])
+        else:
+            num_z = int(np.ceil(fid[d].shape[0]/float(chunk_num)))
+            out[di] = np.array(fid[d][chunk_id*num_z: (chunk_id + 1) * num_z])
+
+    return out[0] if len(out) == 1 else out
 
 
 def write_h5(filename, dtarray, datasetname="main"):
