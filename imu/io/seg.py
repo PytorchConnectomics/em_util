@@ -83,7 +83,7 @@ def seg_biggest(seg):
     return seg
 
 
-def seg2rgb(seg):
+def seg_to_rgb(seg):
     # convert to 24 bits
     return np.stack([seg // 65536, seg // 256, seg % 256], axis=2).astype(
         np.uint8
