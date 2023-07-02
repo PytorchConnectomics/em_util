@@ -132,7 +132,7 @@ def merge_bbox_one_matrix(bbox_matrix):
 
 
 def merge_bbox_two_matrices(bbox_matrix_a, bbox_matrix_b):
-    # [ymin,ymax, xmin,xmax]
+    # [index, ymin,ymax, xmin,xmax]
     bbox_a_id,  bbox_b_id = bbox_matrix_a[:, 0], bbox_matrix_b[:, 0]
     intersect_id = np.in1d(bbox_a_id, bbox_b_id)
     if intersect_id.sum() == 0 :
@@ -142,7 +142,7 @@ def merge_bbox_two_matrices(bbox_matrix_a, bbox_matrix_b):
         for i in np.where(intersect_id)[0]:
             bbox_a = bbox_matrix_a[i, 1:]
             bbox_b_index = bbox_b_id == bbox_a_id[i]
-            bbox_b = bbox_matrix_b[bbox_b_index, 1:]
+            bbox_b = bbox_matrix_b[bbox_b_index, 1:][0]
             bbox_matrix_b[bbox_b_index, 1:] = merge_bbox(bbox_a, bbox_b)
         out = np.vstack([bbox_matrix_a[np.logical_not(intersect_id)], bbox_matrix_b])
         return out
@@ -160,6 +160,8 @@ def merge_bbox_chunk(load_bbox, chunk, chunk_size):
                     bbox = load_bbox(zi, yi, xi)
                     if bbox is not None:
                         # update the local coordinates to global coordinates
+                        if bbox.ndim == 1:
+                            bbox = bbox.reshape(1, -1)
                         bbox[:, 1:7] += [
                             chunk[0] * zi,
                             chunk[0] * zi,
