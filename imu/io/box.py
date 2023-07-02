@@ -137,7 +137,7 @@ def merge_bbox_two_matrices(bbox_matrix_a, bbox_matrix_b):
     intersect_id = np.in1d(bbox_a_id, bbox_b_id)
     if intersect_id.sum() == 0 :
         # no intersection
-        return np.vstack([bbox_matrix_a, bbox_matrix_b]))
+        return np.vstack([bbox_matrix_a, bbox_matrix_b])
     else:
         for i in np.where(intersect_id)[0]:
             bbox_a = bbox_matrix_a[i, 1:]
