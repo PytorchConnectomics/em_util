@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.ndimage import zoom
-from ..io import mkdir, seg2rgb
-from imageio import imwite
+from ..io import mkdir, seg_to_rgb
+from imageio import imwrite
 
 
 def create_mip_images(
@@ -27,8 +27,8 @@ def create_mip_images(
 
         for m in level_ran:
             if do_seg:
-                imwite(get_output_name(m, z), seg2rgb(im))
+                imwrite(get_output_name(m, z), seg_to_rgb(im))
             else:
-                imwite(get_output_name(m, z), im)
+                imwrite(get_output_name(m, z), im)
             if m != level_ran[-1]:
                 im = zoom(im, 0.5, order=resize_order)
