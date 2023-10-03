@@ -163,12 +163,12 @@ def merge_bbox_chunk(load_bbox, chunk, chunk_size):
                         if bbox.ndim == 1:
                             bbox = bbox.reshape(1, -1)
                         bbox[:, 1:7] += [
-                            chunk[0] * zi,
-                            chunk[0] * zi,
-                            chunk[1] * yi,
-                            chunk[1] * yi,
-                            chunk[2] * xi,
-                            chunk[2] * xi,
+                            chunk_size[0] * zi,
+                            chunk_size[0] * zi,
+                            chunk_size[1] * yi,
+                            chunk_size[1] * yi,
+                            chunk_size[2] * xi,
+                            chunk_size[2] * xi,
                         ]
                         if out is None:
                             out = bbox
@@ -183,10 +183,10 @@ def merge_bbox_chunk(load_bbox, chunk, chunk_size):
                 if bbox is not None:
                     # update the local coordinates to global coordinates
                     bbox[:, 1:5] += [
-                        chunk[0] * yi,
-                        chunk[0] * yi,
-                        chunk[1] * xi,
-                        chunk[1] * xi,
+                        chunk_size[0] * yi,
+                        chunk_size[0] * yi,
+                        chunk_size[1] * xi,
+                        chunk_size[1] * xi,
                     ]
                     if out is None:
                         out = bbox

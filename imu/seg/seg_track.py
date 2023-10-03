@@ -1,6 +1,5 @@
 import numpy as np
-from .seg_util import seg_iou2d
-from ..io import read_vol, get_bb_all_2d
+from ..io import read_vol, compute_bbox_all_2d, seg_iou2d
 from .region_graph import merge_id
 from skimage.morphology import remove_small_objects
 from tqdm import tqdm
@@ -57,9 +56,9 @@ def seg2d_to_IoU(seg3d, th_iou=0):
     # raw iou result or matches
     ndim = 5 if th_iou == 0 else 2
     out = [np.zeros([ndim, 0])] * (seg3d.shape[0] - 1)
-    bb_pre = get_bb_all_2d(seg3d[0], True)
+    bb_pre = compute_bbox_all_2d(seg3d[0], True)
     for z in range(seg3d.shape[0] - 1):
-        bb_new = get_bb_all_2d(seg3d[z + 1], True)
+        bb_new = compute_bbox_all_2d(seg3d[z + 1], True)
         if bb_pre is not None and bb_new is not None:
             iou = seg_iou2d(seg3d[z], seg3d[z + 1], bb1=bb_pre, bb2=bb_new)
             if iou is not None:
