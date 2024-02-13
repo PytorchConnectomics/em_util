@@ -38,6 +38,7 @@ def read_vol(filename, dataset_name=None, z=None, image_type="im", ratio=[1,1]):
             opt = 1
         if image_type == "seg":  # force it to be 1-dim
             im0 = rgb_to_seg(im0)
+        im0 = im0[::ratio[0], ::ratio[1]]
         sz = list(im0.shape)
         out = np.zeros([numZ] + sz, im0.dtype)
         out[0] = im0
@@ -49,7 +50,7 @@ def read_vol(filename, dataset_name=None, z=None, image_type="im", ratio=[1,1]):
             tmp = imread(fn)
             if image_type == "seg":  # force it to be 1-dim
                 tmp = rgb_to_seg(tmp)
-                out[i] = tmp[::ratio[0], ::ratio[1]]
+            out[i] = tmp[::ratio[0], ::ratio[1]]
     elif filename[-2:] == "h5":
         out = read_h5(filename, dataset_name)
     elif filename[-3:] == "zip":
