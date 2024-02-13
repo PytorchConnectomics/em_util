@@ -5,6 +5,7 @@ from imageio import imread
 import imageio
 from scipy.ndimage import zoom
 import h5py
+import pickle
 
 from .seg import rgb_to_seg
 
@@ -19,7 +20,7 @@ def mkdir(fn, opt=""):
             os.mkdir(fn)
 
 
-def read_vol(filename, dataset_name=None, z=None, image_type="im"):
+def read_vol(filename, dataset_name=None, z=None, image_type="im", ratio=[1,1]):
     # image_type='seg': 1-channel
     # read a folder of images
     if (
@@ -48,7 +49,7 @@ def read_vol(filename, dataset_name=None, z=None, image_type="im"):
             tmp = imread(fn)
             if image_type == "seg":  # force it to be 1-dim
                 tmp = rgb_to_seg(tmp)
-            out[i] = tmp
+                out[i] = tmp[::ratio[0], ::ratio[1]]
     elif filename[-2:] == "h5":
         out = read_h5(filename, dataset_name)
     elif filename[-3:] == "zip":
@@ -149,3 +150,20 @@ def write_gif(outname, filenames, ratio=1, duration=0.5):
                 )
         out[fid] = image
     imageio.mimsave(outname, out, "GIF", duration=duration)
+
+def read_pkl(filename):
+    """
+    The function `read_pkl` reads a pickle file and returns a list of the objects stored in the file.
+
+    :param filename: The filename parameter is a string that represents the name of the file you want to
+    read. It should include the file extension, such as ".pkl" for a pickle file
+    :return: a list of objects that were read from the pickle file.
+    """
+    data = []
+    with open(filename, "rb") as fid:
+        while True:
+            try:
+                data.append(pickle.load(fid))
+            except EOFError:
+                break
+    return data
