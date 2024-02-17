@@ -10,8 +10,8 @@ def getInclude():
 def getExtension():
     extensions = []
     extensions += [Extension(
-            'imu.seg.region_graph',
-            sources=['imu/seg/region_graph.pyx', 'imu/seg/cpp/region_graph.cpp'],
+            'emu.seg.region_graph',
+            sources=['emu/seg/region_graph.pyx', 'emu/seg/cpp/region_graph.cpp'],
             language='c++',
             extra_link_args=['-std=c++11'],
             extra_compile_args=['-std=c++11'])]
@@ -19,7 +19,7 @@ def getExtension():
 
 def setup_package(no_cython=True):
     __version__ = '0.1'
-    url = 'https://github.com/donglaiw/ImUtil'
+    url = 'https://github.com/donglaiw/emutil'
 
     exts = [] 
     package_data = {}
@@ -27,18 +27,18 @@ def setup_package(no_cython=True):
         from Cython.Build import cythonize
         exts = cythonize(getExtension())
         package_data = {'': [
-                'imu/seg/cpp/*.h',
-                'imu/seg/cpp/*.cpp',
-                'imu/seg/*.pyx',
+                'emu/seg/cpp/*.h',
+                'emu/seg/cpp/*.cpp',
+                'emu/seg/*.pyx',
             ]}
 
-    setup(name='imu',
+    setup(name='emu',
         description='Utility Functions for Image Analysis',
         version=__version__,
         url=url,
         license='MIT',
         author='Donglai Wei',
-        install_requires=['scipy','numpy','networkx','h5py','imageio'],
+        install_requires=['scipy','numpy','networkx','h5py','imageio', 'skimage','tqdm'],
         include_dirs=getInclude(), 
         packages=find_packages(),
         package_data=package_data,

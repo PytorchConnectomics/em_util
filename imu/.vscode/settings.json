@@ -1,9 +1,0 @@
-{
-    "python.linting.enabled": true,
-    "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter",
-        "editor.formatOnPaste": true
-    },
-    "python.formatting.provider": "black",
-    "python.linting.pylintEnabled": true
-}

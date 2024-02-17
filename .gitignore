@@ -134,3 +134,4 @@ T_slurm.py
 db/
 *~
 *.h5
+.vscode
