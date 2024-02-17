@@ -1,16 +1,14 @@
-# ImUtil
-Image analysis utility functions
+# EM-util
+Electron microscopy image analysis utility functions
 
 
 ### Installation
 ```
-conda create -n imu python==3.7
-source activate imu
-conda install pip cython numpy
-pip install --editable .
-python setup.py build_ext --inplace
-```
+conda create -n emu python==3.7
+source activate emu
 
-### Useful Packages
-```pip install fastremap connected-components-3d
+git clone git@github.com:PytorchConnectomics/EM-util.git
+cd EM-util
+pip install --editable .
+
 ```
