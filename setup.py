@@ -9,7 +9,7 @@ def setup_package():
         url=url,
         license='MIT',
         author='Donglai Wei',
-        install_requires=['scipy','numpy','networkx','h5py','imageio', 'scikit-image','tqdm', 'connected-components-3d', 'fastremap'],        
+        install_requires=['scipy','numpy','networkx','h5py','imageio', 'scikit-image','tqdm', 'connected-components-3d'],
         packages=find_packages(),
     )
 

@@ -64,15 +64,12 @@ def adapted_rand(seg, gt, all_stats=False):
     fScore = 2.0 * precision * recall / (precision + recall)
     are = 1.0 - fScore
 
-    if all_stats:
-        return (are, precision, recall)
-    else:
-        return are
+    return (are, precision, recall) if all_stats else are
 
 
 # Evaluation code courtesy of Juan Nunez-Iglesias, taken from
 # https://github.com/janelia-flyem/gala/blob/master/gala/evaluate.py
-def voi(reconstruction, groundtruth, ignore_reconstruction=[], ignore_groundtruth=[0]):
+def voi(reconstruction, groundtruth, ignore_reconstruction=None, ignore_groundtruth=None):
     """Return the conditional entropies of the variation of information metric. [1]
 
     Let X be a reconstruction, and Y a ground truth labelling. The variation of
@@ -104,13 +101,17 @@ def voi(reconstruction, groundtruth, ignore_reconstruction=[], ignore_groundtrut
     [1] Meila, M. (2007). Comparing clusterings - an information based
     distance. Journal of Multivariate Analysis 98, 873-895.
     """
+    if ignore_reconstruction is None:
+        ignore_reconstruction = []
+    if ignore_groundtruth is None:
+        ignore_groundtruth = [0]
     (hyxg, hxgy) = split_vi(
         reconstruction, groundtruth, ignore_reconstruction, ignore_groundtruth
     )
     return (hxgy, hyxg)
 
 
-def split_vi(x, y=None, ignore_x=[0], ignore_y=[0]):
+def split_vi(x, y=None, ignore_x=None, ignore_y=None):
     """Return the symmetric conditional entropies associated with the VI.
 
     The variation of information is defined as VI(X,Y) = H(X|Y) + H(Y|X).
@@ -142,12 +143,16 @@ def split_vi(x, y=None, ignore_x=[0], ignore_y=[0]):
     --------
     vi
     """
+    if ignore_x is None:
+        ignore_x = [0]
+    if ignore_y is None:
+        ignore_y = [0]
     _, _, _, hxgy, hygx, _, _ = vi_tables(x, y, ignore_x, ignore_y)
     # false merges, false splits
     return np.array([hygx.sum(), hxgy.sum()])
 
 
-def vi_tables(x, y=None, ignore_x=[0], ignore_y=[0]):
+def vi_tables(x, y=None, ignore_x=None, ignore_y=None):
     """Return probability tables used for calculating VI.
 
     If y is None, x is assumed to be a contingency table.
@@ -171,6 +176,10 @@ def vi_tables(x, y=None, ignore_x=[0], ignore_y=[0]):
         per-segment conditional entropies of `x` given `y` and vice-versa, the
         per-segment conditional probability p log p.
     """
+    if ignore_x is None:
+        ignore_x = [0]
+    if ignore_y is None:
+        ignore_y = [0]
     if y is not None:
         pxy = contingency_table(x, y, ignore_x, ignore_y)
     else:
@@ -202,7 +211,7 @@ def vi_tables(x, y=None, ignore_x=[0], ignore_y=[0]):
     return [pxy] + list(map(np.asarray, [px, py, hxgy, hygx, lpygx, lpxgy]))
 
 
-def contingency_table(seg, gt, ignore_seg=[0], ignore_gt=[0], norm=True):
+def contingency_table(seg, gt, ignore_seg=None, ignore_gt=None, norm=True):
     """Return the contingency table for all regions in matched segmentations.
 
     Parameters
@@ -227,6 +236,10 @@ def contingency_table(seg, gt, ignore_seg=[0], ignore_gt=[0], norm=True):
         labeled `i` in `seg` and `j` in `gt`. (Or the proportion of such voxels
         if `norm=True`.)
     """
+    if ignore_seg is None:
+        ignore_seg = [0]
+    if ignore_gt is None:
+        ignore_gt = [0]
     segr = seg.ravel()
     gtr = gt.ravel()
     ignored = np.zeros(segr.shape, np.bool)
@@ -261,10 +274,7 @@ def divide_columns(matrix, row, in_place=False):
     out : same type as `matrix`
         The result of the row-wise division.
     """
-    if in_place:
-        out = matrix
-    else:
-        out = matrix.copy()
+    out = matrix if in_place else matrix.copy()
     if type(out) in [sparse.csc_matrix, sparse.csr_matrix]:
         if type(out) == sparse.csc_matrix:
             convert_to_csc = True
@@ -300,10 +310,7 @@ def divide_rows(matrix, column, in_place=False):
     out : same type as `matrix`
         The result of the row-wise division.
     """
-    if in_place:
-        out = matrix
-    else:
-        out = matrix.copy()
+    out = matrix if in_place else matrix.copy()
     if type(out) in [sparse.csc_matrix, sparse.csr_matrix]:
         if type(out) == sparse.csr_matrix:
             convert_to_csr = True
@@ -345,10 +352,7 @@ def xlogx(x, out=None, in_place=False):
         y = x.copy()
     else:
         y = out
-    if type(y) in [sparse.csc_matrix, sparse.csr_matrix]:
-        z = y.data
-    else:
-        z = y
+    z = y.data if type(y) in [sparse.csc_matrix, sparse.csr_matrix] else y
     nz = z.nonzero()
     z[nz] *= np.log2(z[nz])
     return y
@@ -364,7 +368,7 @@ def confusion_matrix(pred, gt, thres=0.5):
     return (TP, FP, TN, FN)
 
 
-def get_binary_jaccard(pred, gt, thres=[0.5]):
+def get_binary_jaccard(pred, gt, thres=None):
     """Evaluate the binary prediction at multiple thresholds using the Jaccard
     Index, which is also known as Intersection over Union (IoU). If the prediction
     is already binarized, different thresholds will result the same result.
@@ -379,6 +383,8 @@ def get_binary_jaccard(pred, gt, thres=[0.5]):
         number of element(s) in the probability threshold list. The four scores in each line
         are foreground IoU, IoU, precision and recall, respectively.
     """
+    if thres is None:
+        thres = [0.5]
     score = np.zeros((len(thres), 4))
     for tid, t in enumerate(thres):
         assert 0.0 < t < 1.0, "The range of the threshold should be (0,1)."
