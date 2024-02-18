@@ -214,8 +214,6 @@ def read_h5(filename, dataset=None, chunk_id=0, chunk_num=1):
     Returns:
         numpy.ndarray or list: The data from the HDF5 file.
 
-    Raises:
-        None
     """
     fid = h5py.File(filename, "r")
     if dataset is None:
@@ -226,6 +224,30 @@ def read_h5(filename, dataset=None, chunk_id=0, chunk_num=1):
         out[di] = read_vol_chunk(fid[d], chunk_id, chunk_num)
 
     return out[0] if len(out) == 1 else out
+
+def read_h5_shape(filename, dataset=None):
+    """
+    Read the shape of the data from an HDF5 file.
+
+    Args:
+        filename (str): The path to the HDF5 file.
+        dataset (str or list, optional): The name or names of the dataset(s) to read. Defaults to None.
+
+    Returns:
+        tuple or list: The shape of data from the HDF5 file.
+
+    """
+
+    with h5py.File(filename, 'r'):
+        if dataset is None:
+            dataset = fid.keys() if sys.version[0] == "2" else list(fid)
+            print(f'h5 keys are: {dataset}')
+        out = [None] * len(dataset)
+        for di, d in enumerate(dataset):
+            out[di] = fid[d].shape
+
+    return out[0] if len(out) == 1 else out
+
 
 
 def write_h5(filename, data, dataset="main"):
