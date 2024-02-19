@@ -23,4 +23,4 @@ def write_slurm_all(cmd, filename, job_num=1, partition='weidf', num_cpu=1, num_
     for job_id in range(job_num):
         write_slurm(cmd, f'{filename}_{job_id}.sh', job_id, job_num, partition, num_cpu, num_gpu, memory, time)
     # print bash command to run submit all jobs
-    print('for i in {0..%d};do sbatch %s_${i}.sh && sleep 1;done' % (job_num, filename))
+    print('for i in {0..%d};do sbatch %s_${i}.sh && sleep 1;done' % (job_num - 1, filename))

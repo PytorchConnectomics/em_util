@@ -238,7 +238,7 @@ def read_h5_shape(filename, dataset=None):
 
     """
 
-    with h5py.File(filename, 'r'):
+    with h5py.File(filename, 'r') as fid:
         if dataset is None:
             dataset = fid.keys() if sys.version[0] == "2" else list(fid)
             print(f'h5 keys are: {dataset}')
