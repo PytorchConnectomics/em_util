@@ -37,7 +37,7 @@ def resize_image(image, ratio=None, order=0)
         ratio = [1] * image.ndim
     return zoom(image, ratio, order=resize_mode)
 
-def read_image(filename, image_type="image", ratio=None, resize_mode=1, data_type="2d"):
+def read_image(filename, image_type="image", ratio=None, resize_mode=1, data_type="2d", crop=None):
     """
     Read an image from a file.
 
@@ -69,6 +69,8 @@ def read_image(filename, image_type="image", ratio=None, resize_mode=1, data_typ
             else:
                 # do not zoom the color channel
                 image = zoom(image, ratio + [1], order=resize_mode)
+        if crop is not None:
+            image = image[crop[0]: crop[1], crop[2]: crop[3]]
     else:
         # read in nd volume
         image = imageio.volread(filename)
@@ -77,6 +79,9 @@ def read_image(filename, image_type="image", ratio=None, resize_mode=1, data_typ
                 str(ratio).isnumeric() or len(ratio) == image.ndim
             ), f"ratio's dim {len(ratio)} is not equal to image's dim {image.ndim}"
             image = zoom(image, ratio, order=resize_mode)
+        if crop is not None:
+            obj = tuple(slice(crop[x*2], crop[x*2+1]) for x in range(image.ndim))
+            image = image[obj]
     return image
 
 def write_image(filename, image, image_type="image"):
