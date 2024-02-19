@@ -33,7 +33,7 @@ def mkdir(foldername, opt=""):
             os.mkdir(foldername)
 
 
-def read_image(filename, image_type="image", ratio=None, resize_mode=1, data_type="2d"):
+def read_image(filename, image_type="image", ratio=None, resize_mode=None, data_type="2d"):
     """
     Read an image from a file.
 
@@ -58,8 +58,8 @@ def read_image(filename, image_type="image", ratio=None, resize_mode=1, data_typ
         if ratio is not None:
             if str(ratio).isnumeric():
                 ratio = [ratio, ratio]
-            if image_type == "seg":
-                resize_mode = 0
+            if resize_mode is None:
+                resize_mode = 0 if image_type == "seg" else 1
             if image.ndim == 2:
                 image = zoom(image, ratio, order=resize_mode)
             else:
