@@ -341,6 +341,11 @@ def seg_to_cc(seg, num_conn=None):
         num_conn = 4 if seg.ndim==2 else 6
     return cc3d.connected_components(seg, connectivity=num_conn)
 
+def seg3d_to_cc(seg3d, num_conn=None):
+    for z in range(seg3d.shape[0]):
+        seg3d[z] = seg_to_cc(seg3d[z], num_conn)
+    return seg3d
+
 def seg_remove_small_cc(seg, num_conn=None, threshold=100, invert=False):
     seg = seg_to_cc(seg, num_conn)
     return seg_remove_small(seg, threshold=100, invert=False)
