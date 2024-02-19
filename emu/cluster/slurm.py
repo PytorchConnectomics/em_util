@@ -17,7 +17,7 @@ def write_slurm(cmd, filename=None, job_id=0, job_num=1, partition='weidf', num_
     if filename is None:
         return out
     else:
-        write_txt(out)
+        write_txt(filename, out)
 
 def write_slurm_all(cmd, filename, job_num=1, partition='weidf', num_cpu=1, num_gpu=0, memory=10000, time='1-00:00'):
     for job_id in range(job_num):
