@@ -19,7 +19,7 @@ def write_slurm(cmd, filename=None, job_id=0, job_num=1, partition='shared', num
     else:
         write_txt(filename, out)
 
-def write_slurm_all(cmd, filename, job_num=1, partition='weidf', num_cpu=1, num_gpu=0, memory=10000, time='1-00:00'):
+def write_slurm_all(cmd, filename, job_num=1, partition='shared', num_cpu=1, num_gpu=0, memory=10000, time='1-00:00'):
     for job_id in range(job_num):
         write_slurm(cmd, f'{filename}_{job_id}.sh', job_id, job_num, partition, num_cpu, num_gpu, memory, time)
     # print bash command to run submit all jobs
