@@ -1,6 +1,6 @@
 from ..io import write_txt
 
-def write_slurm(cmd, filename=None, job_id=0, job_num=1, partition='weidf', num_cpu=1, num_gpu=0, memory=10000, time='1-00:00'):
+def write_slurm(cmd, filename=None, job_id=0, job_num=1, partition='shared', num_cpu=1, num_gpu=0, memory=10000, time='1-00:00'):
     out = f"""#!/bin/bash    
     #SBATCH -p {partition}
     #SBATCH -N 1 # number of nodes
