@@ -268,7 +268,8 @@ def write_h5(filename, data, dataset="main"):
     fid = h5py.File(filename, "w")
     if isinstance(data, (list,)):
         if not isinstance(dataset, (list,)): 
-            dataset = ['key%d'%x for x in range(len(data))]        
+            num_digit = int(np.floor(np.log10(len(data)))) + 1
+            dataset = [('key%0'+str(num_digit)+'d')%x for x in range(len(data))]        
         for i, dd in enumerate(dataset):
             ds = fid.create_dataset(
                 dd,
