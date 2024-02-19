@@ -2,16 +2,16 @@ from ..io import write_txt
 
 def write_slurm(cmd, filename=None, job_id=0, job_num=1, partition='shared', num_cpu=1, num_gpu=0, memory=10000, time='1-00:00'):
     out = f"""#!/bin/bash    
-    #SBATCH -p {partition}
-    #SBATCH -N 1 # number of nodes
-    #SBATCH -n {num_cpu} # number of cores
-    #SBATCH --mem {memory} # memory pool for all cores
-    #SBATCH -t {time} # time (D-HH:MM)
-    #SBATCH -o slurm.%N.%j.out # STDOUT
-    #SBATCH -e slurm.%N.%j.err # STDERR
-    """
+#SBATCH -p {partition}
+#SBATCH -N 1 # number of nodes
+#SBATCH -n {num_cpu} # number of cores
+#SBATCH --mem {memory} # memory pool for all cores
+#SBATCH -t {time} # time (D-HH:MM)
+#SBATCH -o slurm.%N.%j.out # STDOUT
+#SBATCH -e slurm.%N.%j.err # STDERR
+"""
     if num_gpu > 0:        
-        out += f'#SBATCH --gres=gpu:{num_gpu} # memory pool for all cores\n'
+        out += f'#SBATCH --gres=gpu:{num_gpu} # memory pool for all cores\n\n'
         
     out += cmd % (job_id, job_num)
     if filename is None:
