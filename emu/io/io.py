@@ -32,12 +32,12 @@ def mkdir(foldername, opt=""):
         else:
             os.mkdir(foldername)
 
-def resize_image(image, ratio=None, order=0):
+def resize_image(image, ratio=None, resize_order=0):
     if ratio is None:
         ratio = [1] * image.ndim
-    return zoom(image, ratio, order=resize_mode)
+    return zoom(image, ratio, order=resize_order)
 
-def read_image(filename, image_type="image", ratio=None, resize_mode=1, data_type="2d", crop=None):
+def read_image(filename, image_type="image", ratio=None, resize_order=1, data_type="2d", crop=None):
     """
     Read an image from a file.
 
@@ -45,7 +45,7 @@ def read_image(filename, image_type="image", ratio=None, resize_mode=1, data_typ
         filename (str): The path to the image file.
         image_type (str, optional): The type of image to read. Defaults to "image".
         ratio (int or list, optional): The scaling ratio for the image. Defaults to None.
-        resize_mode (int, optional): The order of interpolation for scaling. Defaults to 1.
+        resize_order (int, optional): The order of interpolation for scaling. Defaults to 1.
         data_type (str, optional): The type of image data to read. Defaults to "2d".
 
     Returns:
@@ -62,13 +62,13 @@ def read_image(filename, image_type="image", ratio=None, resize_mode=1, data_typ
         if ratio is not None:
             if str(ratio).isnumeric():
                 ratio = [ratio, ratio]
-            if resize_mode is None:
-                resize_mode = 0 if image_type == "seg" else 1
+            if resize_order is None:
+                resize_order = 0 if image_type == "seg" else 1
             if image.ndim == 2:
-                image = zoom(image, ratio, order=resize_mode)
+                image = zoom(image, ratio, order=resize_order)
             else:
                 # do not zoom the color channel
-                image = zoom(image, ratio + [1], order=resize_mode)
+                image = zoom(image, ratio + [1], order=resize_order)
         if crop is not None:
             image = image[crop[0]: crop[1], crop[2]: crop[3]]
     else:
@@ -78,7 +78,7 @@ def read_image(filename, image_type="image", ratio=None, resize_mode=1, data_typ
             assert (
                 str(ratio).isnumeric() or len(ratio) == image.ndim
             ), f"ratio's dim {len(ratio)} is not equal to image's dim {image.ndim}"
-            image = zoom(image, ratio, order=resize_mode)
+            image = zoom(image, ratio, order=resize_order)
         if crop is not None:
             obj = tuple(slice(crop[x*2], crop[x*2+1]) for x in range(image.ndim))
             image = image[obj]
@@ -95,7 +95,7 @@ def get_file_number(filename, index):
 def get_filename(filename, index, x):
     return filename[x] if isinstance(filename, list) else filename % index[x]
 def read_image_folder(
-    filename, index=None, image_type="image", ratio=None, resize_mode=None
+    filename, index=None, image_type="image", ratio=None, resize_order=None
 ):
     """
     Read a folder of images.
@@ -105,7 +105,7 @@ def read_image_folder(
         index (int or list, optional): The index or indices of the images to read. Defaults to None.
         image_type (str, optional): The type of image to read. Defaults to "image".
         ratio (list, optional): The downsampling ratio for the images. Defaults to None.
-        resize_mode (int, optional): The order of interpolation for scaling. Defaults to 1.
+        resize_order (int, optional): The order of interpolation for scaling. Defaults to 1.
 
     Returns:
         numpy.ndarray: The folder of images.
@@ -117,12 +117,12 @@ def read_image_folder(
         ratio = [1, 1]
     # either filename or index is a list
     num_image = get_file_number(filename, index)    
-    im0 = read_image(get_filename(filename, index, 0), image_type, ratio, resize_mode)
+    im0 = read_image(get_filename(filename, index, 0), image_type, ratio, resize_order)
     sz = list(im0.shape)
     out = np.zeros([num_image] + sz, im0.dtype)
     out[0] = im0
     for i in range(1, num_image):
-        out[i] = read_image(get_filename(filename, index, i), image_type, ratio, resize_mode)
+        out[i] = read_image(get_filename(filename, index, i), image_type, ratio, resize_order)
     return out
 
 def write_image_folder(
