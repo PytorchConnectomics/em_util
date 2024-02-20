@@ -37,7 +37,7 @@ def resize_image(image, ratio=None, resize_order=0):
         ratio = [1] * image.ndim
     return zoom(image, ratio, order=resize_order)
 
-def read_image(filename, image_type="image", ratio=None, resize_order=1, data_type="2d", crop=None):
+def read_image(filename, image_type="image", ratio=None, resize_order=None, data_type="2d", crop=None):
     """
     Read an image from a file.
 

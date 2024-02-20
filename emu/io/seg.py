@@ -180,14 +180,14 @@ def seg_relabel(seg, uid=None, nid=None, do_sort=False, do_type=False):
     seg[seg >= mid] = 0
     return mapping[seg]
 
-def seg_remove_id(seg, bid=None, threshold=100):
+def seg_remove_id(seg, bid, invert=False):
     """
     Remove segments from a segmentation map based on their size.
 
     Args:
         seg (numpy.ndarray): The input segmentation map.
-        bid (numpy.ndarray, optional): The segment IDs to be removed. Defaults to None.
-        thres (int, optional): The size threshold. Segments with a size below this threshold will be removed. Defaults to 100.
+        bid (numpy.ndarray): The segment IDs to be removed. Defaults to None.
+        invert (Boolean, optional): Invert the result.
 
     Returns:
         numpy.ndarray: The updated segmentation map.
@@ -197,11 +197,12 @@ def seg_remove_id(seg, bid=None, threshold=100):
         - Segments with a size below the specified threshold are removed.
         - If `bid` is provided, only the specified segment IDs are removed.
     """    
-    rl = np.arange(seg.max() + 1).astype(seg.dtype)
-    if bid is None:
-        uid, uc = np.unique(seg, return_counts=True)
-        bid = uid[uc < threshold]
-    rl[bid] = 0
+    if invert:
+        rl = np.zeros(seg.max() + 1).astype(seg.dtype)
+        rl[bid] = bid
+    else:
+        rl = np.arange(seg.max() + 1).astype(seg.dtype)
+        rl[bid] = 0
     return rl[seg]
 
 def seg_remove_small(seg, threshold=100, invert=False):
