@@ -32,7 +32,7 @@ def mkdir(foldername, opt=""):
         else:
             os.mkdir(foldername)
 
-def resize_image(image, ratio=None, order=0)
+def resize_image(image, ratio=None, order=0):
     if ratio is None:
         ratio = [1] * image.ndim
     return zoom(image, ratio, order=resize_mode)
