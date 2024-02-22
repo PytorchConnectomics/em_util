@@ -86,7 +86,7 @@ def read_image(filename, image_type="image", ratio=None, resize_order=None, data
 
 def write_image(filename, image, image_type="image"):
     if image_type=='seg':
-        image = rgb_to_seg(image)
+        image = seg_to_rgb(image)
     imageio.imsave(filename, image)
 
 

@@ -197,11 +197,14 @@ def seg_remove_id(seg, bid, invert=False):
         - Segments with a size below the specified threshold are removed.
         - If `bid` is provided, only the specified segment IDs are removed.
     """    
+    seg_m = seg.max()
+    bid = np.array(bid)
+    bid = bid[bid <= seg_m]
     if invert:
-        rl = np.zeros(seg.max() + 1).astype(seg.dtype)
+        rl = np.zeros(seg_m + 1).astype(seg.dtype)
         rl[bid] = bid
     else:
-        rl = np.arange(seg.max() + 1).astype(seg.dtype)
+        rl = np.arange(seg_m + 1).astype(seg.dtype)
         rl[bid] = 0
     return rl[seg]
 
