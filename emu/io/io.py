@@ -7,7 +7,7 @@ from scipy.ndimage import zoom
 import h5py
 import json
 
-from .seg import rgb_to_seg
+from .seg import seg_to_rgb, rgb_to_seg
 
 
 def mkdir(foldername, opt=""):
