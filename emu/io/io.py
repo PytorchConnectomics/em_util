@@ -95,7 +95,7 @@ def get_file_number(filename, index):
 def get_filename(filename, index, x):
     return filename[x] if isinstance(filename, list) else filename % index[x]
 def read_image_folder(
-    filename, index=None, image_type="image", ratio=None, resize_order=None
+    filename, index=None, image_type="image", ratio=None, resize_order=None, crop=None
 ):
     """
     Read a folder of images.
@@ -117,12 +117,12 @@ def read_image_folder(
         ratio = [1, 1]
     # either filename or index is a list
     num_image = get_file_number(filename, index)    
-    im0 = read_image(get_filename(filename, index, 0), image_type, ratio, resize_order)
+    im0 = read_image(get_filename(filename, index, 0), image_type, ratio, resize_order, crop=crop)
     sz = list(im0.shape)
     out = np.zeros([num_image] + sz, im0.dtype)
     out[0] = im0
     for i in range(1, num_image):
-        out[i] = read_image(get_filename(filename, index, i), image_type, ratio, resize_order)
+        out[i] = read_image(get_filename(filename, index, i), image_type, ratio, resize_order, crop=crop)
     return out
 
 def write_image_folder(
