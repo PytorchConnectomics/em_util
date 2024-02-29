@@ -492,7 +492,7 @@ class NgDataset(object):
         cloudpath="",
         data_type="im",
         mip_levels=None,
-        tile_size=[512, 512],
+        tile_size=None,
         num_thread=1,
         do_subdir=False,
         num_channel=1,
@@ -522,6 +522,8 @@ class NgDataset(object):
         # num of chunk: x and y (offset)
         # keep the size
         # num_chunk = [(m_size[mip_levels[0]][x] + m_tile_size[mip_levels[0]][x]-1 - m_oset[mip_levels[0]][x]) // m_tile_size[mip_levels[0]][x] for x in range(2)]
+        if tile_size is None:
+            tile_size = [mip_ratio[-1][0]//mip_ratio[0][0]*self.chunk_size[x] for x in range(2)]
         num_chunk = [
             (m_size[0][x] + m_tile_size[0][x] - 1) // m_tile_size[0][x] for x in range(2)
         ]
