@@ -14,8 +14,6 @@ class NgDataset(object):
         self,
         volume_size=[1024, 1024, 100],
         resolution=[6, 6, 30],
-        chunk_size=[64, 64, 64],
-        offset=[0, 0, 0],
         mip_ratio=[
             [1, 1, 1],
             [2, 2, 1],
@@ -24,6 +22,8 @@ class NgDataset(object):
             [16, 16, 2],
             [32, 32, 4],
         ],
+        chunk_size=[64, 64, 64],
+        offset=[0, 0, 0],
         cloudpath="./",
     ):
         # dimension order: x,y,z
@@ -494,7 +494,7 @@ class NgDataset(object):
         mip_levels=None,
         tile_size=None,
         num_thread=1,
-        do_subdir=False,
+        do_subdir=True,
         num_channel=1,
         start_chunk=0,
         step_chunk=1,
