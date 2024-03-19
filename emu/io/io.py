@@ -6,6 +6,7 @@ import imageio
 from scipy.ndimage import zoom
 import h5py
 import json
+from tqdm import tqdm
 
 from .seg import seg_to_rgb, rgb_to_seg
 
@@ -95,7 +96,7 @@ def get_file_number(filename, index):
 def get_filename(filename, index, x):
     return filename[x] if isinstance(filename, list) else filename % index[x]
 def read_image_folder(
-    filename, index=None, image_type="image", ratio=None, resize_order=None, crop=None
+    filename, index=None, image_type="image", ratio=None, resize_order=None, crop=None, no_tqdm=False
 ):
     """
     Read a folder of images.
@@ -121,15 +122,15 @@ def read_image_folder(
     sz = list(im0.shape)
     out = np.zeros([num_image] + sz, im0.dtype)
     out[0] = im0
-    for i in range(1, num_image):
+    for i in tqdm(range(1, num_image), disable=no_tqdm):
         out[i] = read_image(get_filename(filename, index, i), image_type, ratio, resize_order, crop=crop)
     return out
 
 def write_image_folder(
-    filename, data, index=None, image_type="image"):
+    filename, data, index=None, image_type="image", no_tqdm=False):
     if index is None:
         index = range(data.shape[0]) 
-    for i in index:
+    for i in tqdm(index, disable=no_tqdm):
         write_image(get_filename(filename, index, i), data[i], image_type) 
 
 
