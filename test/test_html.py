@@ -1,8 +1,8 @@
 """ Test functions for html visualization generation """
 
 import sys
-from emu.video import *
-from emu.io import writeTxt
+from em_util.video import *
+from em_util.io import writeTxt
 
 
 def test_shot_detection():

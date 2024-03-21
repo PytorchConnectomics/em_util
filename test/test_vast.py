@@ -1,6 +1,6 @@
 import os,sys
-from imu.vast import *
-from imu.io import rgbToSeg
+from em_util.vast import *
+from em_util.io import rgbToSeg
 from imageio import imread, imwrite
 import glob
 

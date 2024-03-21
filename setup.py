@@ -3,7 +3,7 @@ def setup_package():
     __version__ = '0.1'
     url = 'https://github.com/PytorchConnectomics/EM-util'
 
-    setup(name='emu',
+    setup(name='em_util',
         description='Utility Functions for EM Image Analysis',
         version=__version__,
         url=url,

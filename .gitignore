@@ -135,3 +135,4 @@ db/
 *~
 *.h5
 .vscode/
+.DS_Store

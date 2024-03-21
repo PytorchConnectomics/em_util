@@ -1,10 +1,10 @@
 import os,sys
-from imu.seg import *
-from imu.io import writeH5
+from em_util.seg import *
+from em_util.io import writeH5
 import numpy as np
 
 def test_seg_track(seg, iou_thres=0.2):
-    from imu.seg import predToSeg2d,seg2dToIoU
+    from em_util.seg import predToSeg2d,seg2dToIoU
     seg3d_naive = predToSeg2d(seg, [-1])
     del seg
     matches = seg2dToIoU(seg3d_naive, iou_thres)
