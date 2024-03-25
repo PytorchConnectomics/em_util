@@ -207,4 +207,4 @@ def vol_to_skel(
         progress=True,  # default False, show progress bar
         parallel=num_thread,  # <= 0 all cpu, 1 single process, 2+ multiprocess
         parallel_chunk_size=100,  # how many skeletons to process before updating progress bar
-    )[0]
+    )
