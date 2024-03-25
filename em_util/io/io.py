@@ -175,6 +175,8 @@ def read_vol(filename, dataset=None, chunk_id=0, chunk_num=1):
     """
     if filename[-3:] == "npy":
         out = np.load(filename)
+    elif filename[-3:] == "pkl":
+        out = read_pkl(filename)
     elif filename[-3:] in ["tif", "iff"]:
         out = read_image(filename, data_type="nd")
     elif filename[-2:] == "h5":
@@ -369,6 +371,8 @@ def read_pkl(filename):
                 data.append(pickle.load(fid))
             except EOFError:
                 break
+    if len(data) == 1:
+        return data[0]
     return data
 
 
