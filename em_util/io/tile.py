@@ -19,7 +19,7 @@ def get_tile_name(pattern, row=None, column=None):
     if "%" in pattern:
         return pattern % (row, column)
     elif "{" in pattern:
-        return pattern.format(row, column)
+        return pattern.format(row=row, column=column)
     else:
         return pattern
     
