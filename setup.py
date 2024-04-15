@@ -15,5 +15,5 @@ def setup_package():
 
 if __name__=='__main__':
     # install main python functions
-    # pip install --editable .
+    # python -m pip install --editable .
     setup_package()
