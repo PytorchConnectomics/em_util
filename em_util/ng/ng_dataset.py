@@ -215,6 +215,7 @@ class NgDataset(object):
         do_subdir=False,
         num_channel=1,
         start_chunk=0,
+        end_chunk=-1,
         step_chunk=1,
     ):
         (
@@ -255,7 +256,8 @@ class NgDataset(object):
             # num of chunk: z
             # so that the tile-based mip-levels can output tiles
             num_ztile = m_zres[max(0, m_mip_id - 1)] * self.chunk_size[2]
-            num_zchunk = (self.volume_size[2] + num_ztile - 1) // num_ztile
+            
+            num_zchunk = end_chunk if end_chunk>=0 else (self.volume_size[2] + num_ztile - 1) // num_ztile
             zstep = self.mip_ratio[m_mip_levels[0]][2]
             for z in range(start_chunk, num_zchunk, step_chunk):
                 z0 = (z * num_ztile) // zstep
