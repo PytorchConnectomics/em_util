@@ -499,6 +499,7 @@ class NgDataset(object):
         do_subdir=True,
         num_channel=1,
         start_chunk=0,
+        end_chunk=-1,
         step_chunk=1,
     ):
         (
@@ -535,6 +536,8 @@ class NgDataset(object):
             m_zres[max(0, m_mip_id - 1)] // m_zres[0] * self.chunk_size[2]
         )
         num_chunk += [(m_size[0][2] + num_ztile - 1) // num_ztile]
+        if end_chunk >=0:
+            num_chunk[2] = end_chunk
         # num_chunk += [(m_size[mip_levels[0]][2] - m_oset[mip_levels[0]][2] + num_ztile - 1) // num_ztile]
         # z0,z1,y0,y1,x0,x1: relative coord
         # tile for the finest level
