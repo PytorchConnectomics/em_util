@@ -183,6 +183,17 @@ def read_vol(filename, dataset=None, chunk_id=0, chunk_num=1):
         out = read_h5(filename, dataset, chunk_id, chunk_num)
     elif filename[-3:] == "zip":
         out = read_zarr(filename, dataset, chunk_id, chunk_num)
+    elif len(filename) > 11 and (filename[:11] == "precomputed" or filename[:3] == "gs:"):
+        import cloudvolume
+        if filename[:11] != "precomputed":
+            filename = f'precomputed://{filename}'
+        if '@' in filename:
+            filename, chunk_id = filename.split('@')
+            chunk_id = int(chunk_id)
+        # download cloudvolume data in xyz format 
+        out = np.squeeze(cloudvolume.CloudVolume(filename, mip=chunk_id, cache=False)[:])
+        # transpose it to zyx
+        out = out.transpose(range(out.ndim)[::-1])
     else:
         raise f"Can't read the file type of {filename}"
     return out

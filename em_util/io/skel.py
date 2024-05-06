@@ -27,12 +27,7 @@ def skel_to_length(vertices, edges, res=None):
     v1 = vertices[edges[:, 0]]
     v2 = vertices[edges[:, 1]]
 
-    delta = (v2 - v1) * res
-    delta *= delta
-    dist = np.sum(delta, axis=1)
-    dist = np.sqrt(dist)
-    return np.sum(dist)
-
+    return np.linalg.norm((v2 - v1) * res)
 
 
 def skel_to_networkx(
