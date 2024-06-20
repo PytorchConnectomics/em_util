@@ -6,6 +6,7 @@ import imageio
 from scipy.ndimage import zoom
 import h5py
 import json
+import glob
 from tqdm import tqdm
 
 from .seg import seg_to_rgb, rgb_to_seg
@@ -117,6 +118,8 @@ def read_image_folder(
     if ratio is None:
         ratio = [1, 1]
     # either filename or index is a list
+    if '*' in filename:
+        filename = sorted(glob.glob(filename))
     num_image = get_file_number(filename, index)    
     im0 = read_image(get_filename(filename, index, 0), image_type, ratio, resize_order, crop=crop)
     sz = list(im0.shape)
