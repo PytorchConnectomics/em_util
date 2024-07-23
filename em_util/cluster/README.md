@@ -2,6 +2,8 @@
 
 1. Generate and submit indexed jobs
 ```
+from em_util.cluster import write_slurm_all
+
 cmd = 'python example.py %d %d'
 write_slurm_all(cmd, 'test')
 ```
