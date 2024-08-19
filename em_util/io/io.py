@@ -244,6 +244,9 @@ def read_h5(filename, dataset=None, chunk_id=0, chunk_num=1):
     fid = h5py.File(filename, "r")
     if dataset is None:
         dataset = fid.keys() if sys.version[0] == "2" else list(fid)
+    else:
+        if not isinstance(dataset, list):
+            dataset = list(dataset)
 
     out = [None] * len(dataset)
     for di, d in enumerate(dataset):
