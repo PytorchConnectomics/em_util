@@ -27,8 +27,8 @@ def mkdir(foldername, opt=""):
         None
     """
     if opt == "parent":  # until the last /
-        foldername = os.path.dirname(foldername)
-    if not os.path.exists(foldername):
+        os.makedirs(os.path.dirname(foldername))
+    elif not os.path.exists(foldername):
         if "all" in opt:
             os.makedirs(foldername)
         else:
