@@ -1,6 +1,7 @@
 import os
 import sys
 import pickle
+import yaml
 import numpy as np
 import imageio
 from scipy.ndimage import zoom
@@ -27,9 +28,9 @@ def mkdir(foldername, opt=""):
         None
     """
     if opt == "parent":  # until the last /
-        os.makedirs(os.path.dirname(foldername))
-    elif not os.path.exists(foldername):
-        if "all" in opt:
+        foldername = os.path.dirname(foldername)
+    if not os.path.exists(foldername):
+        if "all" in opt or "parent" in opt:
             os.makedirs(foldername)
         else:
             os.mkdir(foldername)
