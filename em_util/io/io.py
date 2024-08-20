@@ -373,6 +373,11 @@ def write_gif(filename, data, duration=0.5):
     imageio.mimsave(filename, data, "GIF", duration=duration)
 
 
+def read_yml(filename):
+    with open(filename, 'r') as file:
+        data = yaml.safe_load(file)
+    return data
+
 def read_pkl(filename):
     """
     The function `read_pkl` reads a pickle file and returns a list of the objects stored in the file.
