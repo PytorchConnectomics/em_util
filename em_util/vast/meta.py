@@ -16,6 +16,8 @@ def read_vast_seg(fn):
     st_id = 0
     while a[st_id][0] in ["%", "\\"]:
         st_id += 1
+    
+    st_id -= 1
     # remove segment name
     out = np.zeros((len(a) - st_id - 1, 24), dtype=int)
     name = [None] * (len(a) - st_id - 1)
@@ -227,6 +229,7 @@ def vast_meta_relabel(
     pid_nm = [
         i for i, x in enumerate(nn) if max([y in x.lower() for y in kw_nm])
     ]
+    # pid: all are children of background
     pid_nm = np.hstack([pid_nm, pid_b])
     print("apply meta")
     # hierarchical
@@ -238,4 +241,5 @@ def vast_meta_relabel(
         while u0 != rl[u0]:
             rl[rl == u0] = rl[u0]
             u0 = rl[u0]
+        print(u, rl)
     return rl
