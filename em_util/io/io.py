@@ -65,13 +65,14 @@ def read_image(filename, image_type="image", ratio=None, resize_order=None, data
         if ratio is not None:
             if str(ratio).isnumeric():
                 ratio = [ratio, ratio]
-            if resize_order is None:
-                resize_order = 0 if image_type == "seg" else 1
-            if image.ndim == 2:
-                image = zoom(image, ratio, order=resize_order)
-            else:
-                # do not zoom the color channel
-                image = zoom(image, ratio + [1], order=resize_order)
+            if ratio[0] != 1:
+                if resize_order is None:
+                    resize_order = 0 if image_type == "seg" else 1
+                if image.ndim == 2:
+                    image = zoom(image, ratio, order=resize_order)
+                else:
+                    # do not zoom the color channel
+                    image = zoom(image, ratio + [1], order=resize_order)
         if crop is not None:
             image = image[crop[0]: crop[1], crop[2]: crop[3]]
     else:
