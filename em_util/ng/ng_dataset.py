@@ -4,8 +4,8 @@ import shutil
 import struct
 import itertools
 import numpy as np
-from cloudvolume import CloudVolume
 from scipy.ndimage import zoom
+from cloudvolume import CloudVolume
 from ..io import mkdir, write_txt
 
 

@@ -10,8 +10,6 @@ import json
 import glob
 from tqdm import tqdm
 
-from .seg import seg_to_rgb, rgb_to_seg
-
 
 def mkdir(foldername, opt=""):
     """
@@ -452,3 +450,82 @@ def get_volume_size_h5(filename, dataset_name=None):
             volume_size = fid[dataset_name[0]].shape
     fid.close()
     return volume_size
+
+def get_seg_dtype(mid):
+    """
+    Get the appropriate data type for a segmentation based on the maximum ID.
+
+    Args:
+        mid (int): The maximum ID in the segmentation.
+
+    Returns:
+        numpy.dtype: The appropriate data type for the segmentation.
+
+    Notes:
+        - The function determines the appropriate data type based on the maximum ID in the segmentation.
+        - The data type is selected to minimize memory usage while accommodating the maximum ID.
+    """    
+    m_type = np.uint64
+    if mid < 2**8:
+        m_type = np.uint8
+    elif mid < 2**16:
+        m_type = np.uint16
+    elif mid < 2**32:
+        m_type = np.uint32
+    return m_type
+
+
+def seg_to_rgb(seg):
+    """
+    Convert a segmentation map to an RGB image.
+
+    Args:
+        seg (numpy.ndarray): The input segmentation map.
+
+    Returns:
+        numpy.ndarray: The RGB image representation of the segmentation map.
+
+    Notes:
+        - The function converts a segmentation map to an RGB image, where each unique segment ID is assigned a unique color.
+        - The RGB image is represented as a numpy array.
+    """
+    return np.stack([seg // 65536, seg // 256, seg % 256], axis=2).astype(
+        np.uint8
+    )
+
+
+def rgb_to_seg(seg):
+    """
+    Convert an RGB image to a segmentation map.
+
+    Args:
+        seg (numpy.ndarray): The input RGB image.
+
+    Returns:
+        numpy.ndarray: The segmentation map.
+
+    Notes:
+        - The function converts an RGB image to a segmentation map, where each unique color is assigned a unique segment ID.
+        - The segmentation map is represented as a numpy array.
+    """
+    if seg.ndim == 2 or seg.shape[-1] == 1:
+        return np.squeeze(seg)
+    elif seg.ndim == 3:  # 1 rgb image
+        if (seg[:, :, 1] != seg[:, :, 2]).any() or (
+            seg[:, :, 0] != seg[:, :, 2]
+        ).any():
+            return (
+                seg[:, :, 0].astype(np.uint32) * 65536
+                + seg[:, :, 1].astype(np.uint32) * 256
+                + seg[:, :, 2].astype(np.uint32)
+            )
+        else:  # gray image saved into 3-channel
+            return seg[:, :, 0]
+    elif seg.ndim == 4:  # n rgb image
+        return (
+            seg[:, :, :, 0].astype(np.uint32) * 65536
+            + seg[:, :, :, 1].astype(np.uint32) * 256
+            + seg[:, :, :, 2].astype(np.uint32)
+        )
+
+
