@@ -3,6 +3,16 @@ from scipy.ndimage.morphology import binary_erosion, binary_opening, binary_clos
 from ..io import im2col, get_seg_dtype, get_query_count
 
 ## seg statistics
+def seg3d_to_zcount(seg):
+    assert seg.ndim == 3
+    out = [np.zeros(0)] * seg.shape[0]
+    for z in range(seg.shape[0]):
+        out[z] = np.unique(seg[z])
+
+    out = np.hstack(out)
+    ui, uc = np.unique(out[out>0], return_counts=True)
+    return ui, uc
+
 def seg_to_count(seg, do_sort=True, rm_zero=False):
     """
     Convert a segmentation map to a count map.
