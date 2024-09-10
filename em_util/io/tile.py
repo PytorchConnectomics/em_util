@@ -2,7 +2,6 @@ import os
 from .io import read_image, write_json
 import numpy as np
 
-
 def get_tile_name(pattern, row=None, column=None):
     """
     Generate the tile name based on the pattern and indices.
@@ -22,7 +21,25 @@ def get_tile_name(pattern, row=None, column=None):
         return pattern.format(row=row, column=column)
     else:
         return pattern
-    
+ 
+def read_tiles_image(pattern, row_ran, col_ran, image_type='image', image_dtype=np.uint8, tile_size=None, im_size=None):
+    if tile_size is None:
+        tile_size = read_image(get_tile_name(pattern, row_ran[0], col_ran[0]), image_type).shape
+    elif isinstance(tile_size, int):
+        tile_size = [tile_size, tile_size]
+    if im_size is None:
+        tile_size_last = read_image(get_tile_name(pattern, row_ran[-1], col_ran[-1]), image_type).shape
+        im_size = np.array(tile_size) * [len(row_ran), len(col_ran)] + tile_size_last
+
+    out = np.zeros(im_size, image_dtype)
+    for ri,r in row_ran:
+        for ci,c in col_ran:
+            out[:, ri*tile_size[0] : (ri+1)*tile_size,\
+                ci*tile_size[1] : (ci+1)*tile_size[1]] = \
+                    read_image(get_tile_name(pattern, r, c), image_type)
+    return out
+
+   
 def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=None, tile_dtype=np.uint8, tile_type="image", tile_ratio=1, tile_resize_mode=1, tile_border_padding="reflect", tile_blank="", volume_sz=None, zstep=1):
     """
     Read and assemble a volume from a set of tiled images.
