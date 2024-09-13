@@ -29,13 +29,13 @@ def read_tiles_image(pattern, row_ran, col_ran, image_type='image', image_dtype=
         tile_size = [tile_size, tile_size]
     if im_size is None:
         tile_size_last = read_image(get_tile_name(pattern, row_ran[-1], col_ran[-1]), image_type).shape
-        im_size = np.array(tile_size) * [len(row_ran), len(col_ran)] + tile_size_last
+        im_size = np.array(tile_size) * [len(row_ran)-1, len(col_ran)-1] + tile_size_last
 
     out = np.zeros(im_size, image_dtype)
-    for ri,r in row_ran:
-        for ci,c in col_ran:
-            out[:, ri*tile_size[0] : (ri+1)*tile_size,\
-                ci*tile_size[1] : (ci+1)*tile_size[1]] = \
+    for ri,r in enumerate(row_ran):
+        for ci,c in enumerate(col_ran):
+            out[int(ri*tile_size[0]) : int((ri+1)*tile_size[0]),\
+                int(ci*tile_size[1]) : int((ci+1)*tile_size[1])] = \
                     read_image(get_tile_name(pattern, r, c), image_type)
     return out
 
