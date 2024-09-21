@@ -14,7 +14,7 @@ def read_vast_seg(fn):
     a = open(fn).readlines()
     # remove comments
     st_id = 0
-    while a[st_id][0] in ["%", "\\"]:
+    while a[st_id][0] in ["%", "\\", '\n']:
         st_id += 1
     
     st_id -= 1
