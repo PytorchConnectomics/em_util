@@ -318,3 +318,12 @@ def merge_bbox_chunk(load_bbox, chunk, chunk_size):
                         out = merge_bbox_two_matrices(out, bbox)
     
     return out
+
+def count_bbox_border(bbox, volume_size=None):
+    # bbox: Nx4 or Nx6
+    if ran is None:
+        ran = bbox[:,1::2].max(axis=0)
+    num_b = (bbox[:,::2] == 0).sum(axis=1)
+    for i in range(len(ran)):
+        num_b += bbox[:,1+2*i] == ran[i]-1
+    return num_b
