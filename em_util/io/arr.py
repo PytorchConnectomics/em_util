@@ -39,6 +39,16 @@ def print_arr(arr, num=10):
     for rid in range(num_row):
         print(arr_to_str(arr[rid*num: (rid+1)*num]))
 
+def get_query_in(uu, uf, qid):
+    dd = [uf(x) for x in uu]
+    out = np.array([uf(x) in dd for x in qid])
+    return out
+
+
+def get_query_count_dict(uu, uf, uc, qid):
+    dd = dict(zip([uf(x) for x in uu], uc))
+    out = np.array([dd[uf(x)] for x in qid])
+    return out
 
 def get_query_count(ui, uc, qid, mm=0):    
     """
