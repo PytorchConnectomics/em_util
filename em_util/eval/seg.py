@@ -397,3 +397,50 @@ def get_binary_jaccard(pred, gt, thres=None):
         iou = (iou_fg + iou_bg) / 2.0
         score[tid] = np.array([iou_fg, iou, precision, recall])
     return score
+
+def rand_index(
+        gt_path: str,
+        pred_path: str,
+        mask_path = str,
+        print_stats: bool=False,
+        scale: list=None):
+    """
+    get_rand_index: calculate Rand score for instance segmetnations.
+
+    Arguments:
+        gt_path (str): the path to the ground truth volume
+        pred_path (str): the path to the prediction volume
+        mask_path (str): the path to the mask volume
+        print_stats (bool): whether or not to print stats out
+        scale (list): how much to scale each dimension of the gt and mask by
+    """
+
+    # these should be semantic segmentation maps
+    gt = readvol(gt_path).squeeze()
+    pred = readvol(pred_path).squeeze()
+    if mask_path is not None:
+        mask = readvol(mask_path).squeeze()
+
+    # scale if necessary
+    if scale is not None:
+        gt = np.tile(gt, scale)
+        if mask_path is not None:
+            mask = np.tile(mask, scale)
+
+    # apply mask if necessary
+    if mask_path is not None:
+        pred = pred * np.clip(mask, 0, 1)
+
+    # calculate Rand index
+    stats = adapted_rand(pred, gt, all_stats=True)
+
+    # print stats, if necessary
+    if print_stats:
+        print('#####################')
+        print(f'Rand index:\t{stats[0]:.03}')
+        print(f'precision:\t{stats[1]:.03}')
+        print(f'recall:\t\t{stats[2]:.03}')
+        print('#####################')
+
+    # return stats in order [rand_index, precision, recall]
+    return stats
