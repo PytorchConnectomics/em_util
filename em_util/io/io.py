@@ -529,3 +529,72 @@ def rgb_to_seg(seg):
         )
 
 
+def vol_to_skel(
+    labels,
+    scale=4,
+    const=500,
+    obj_ids=None,
+    dust_size=100,
+    res=(32, 32, 30),
+    num_thread=1,
+):
+    import kimimaro
+    """
+    The `vol_to_skel` function takes in a label image and returns the skeletonized version of the
+    objects in the image using the Kimimaro library.
+
+    :param labels: The input labels represent a 3D volume where each voxel is assigned a unique integer
+    label. These labels typically represent different objects or regions in the volume
+    :param scale: The scale parameter determines the scale at which the skeletonization is performed. It
+    is used to control the level of detail in the resulting skeleton. Higher values of scale will result
+    in a coarser skeleton, while lower values will result in a more detailed skeleton, defaults to 4
+    (optional)
+    :param const: The `const` parameter is a physical unit that determines the resolution of the
+    skeletonization process. It represents the distance between two points in the skeletonized output. A
+    higher value of `const` will result in a coarser skeleton, while a lower value will result in a
+    finer skeleton, defaults to 500 (optional)
+    :param obj_ids: The obj_ids parameter is a list of object IDs that specifies which labels in the
+    input image should be processed. If obj_ids is set to None, it will default to all unique labels
+    greater than 0 in the input image
+    :param dust_size: The dust_size parameter specifies the minimum size (in terms of number of voxels)
+    for connected components to be considered as valid objects. Connected components with fewer voxels
+    than the dust_size will be skipped and not processed, defaults to 100 (optional)
+    :param res: The "res" parameter specifies the resolution of the input volume data. It is a tuple of
+    three values representing the voxel size in each dimension. For example, (32, 32, 30) means that the
+    voxel size is 32 units in the x and y dimensions, and 30
+    :param num_thread: The `num_thread` parameter specifies the number of threads to use for parallel
+    processing. A value of 1 means single-threaded processing, while a value greater than 1 indicates
+    multi-threaded processing. A value of 0 or less indicates that all available CPU cores should be
+    used for parallel processing, defaults to 1 (optional)
+    :return: The function `skeletonize` returns the result of the `kimimaro.skeletonize` function, which
+    is the skeletonized version of the input labels.
+    """
+    if obj_ids is None:
+        obj_ids = np.unique(labels)
+        obj_ids = list(obj_ids[obj_ids > 0])
+    return kimimaro.skeletonize(
+        labels,
+        teasar_params={
+            "scale": scale,
+            "const": const,  # physical units
+            "pdrf_exponent": 4,
+            "pdrf_scale": 100000,
+            "soma_detection_threshold": 1100,  # physical units
+            "soma_acceptance_threshold": 3500,  # physical units
+            "soma_invalidation_scale": 1.0,
+            "soma_invalidation_const": 300,  # physical units
+            "max_paths": 50,  # default  None
+        },
+        object_ids=obj_ids,  # process only the specified labels
+        # object_ids=[ ... ], # process only the specified labels
+        # extra_targets_before=[ (27,33,100), (44,45,46) ], # target points in voxels
+        # extra_targets_after=[ (27,33,100), (44,45,46) ], # target points in voxels
+        dust_threshold=dust_size,  # skip connected components with fewer than this many voxels
+        #       anisotropy=(30,30,30), # default True
+        anisotropy=res,  # default True
+        fix_branching=True,  # default True
+        fix_borders=True,  # default True
+        progress=True,  # default False, show progress bar
+        parallel=num_thread,  # <= 0 all cpu, 1 single process, 2+ multiprocess
+        parallel_chunk_size=100,  # how many skeletons to process before updating progress bar
+    )
