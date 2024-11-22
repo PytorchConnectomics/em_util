@@ -271,6 +271,10 @@ def read_h5_shape(filename, dataset=None):
         if dataset is None:
             dataset = fid.keys() if sys.version[0] == "2" else list(fid)
             print(f'h5 keys are: {dataset}')
+        else:
+            if not isinstance(dataset, list):
+                dataset = [dataset]
+
         out = [None] * len(dataset)
         for di, d in enumerate(dataset):
             out[di] = fid[d].shape
