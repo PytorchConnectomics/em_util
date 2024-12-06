@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.ndimage.morphology import binary_erosion, binary_opening, binary_closing, binary_fill_holes
 from ..io import im2col, get_seg_dtype, get_query_count
+from tqdm import tqdm
 
 ## seg statistics
 def seg3d_to_zcount(seg):

@@ -85,8 +85,7 @@ class UnionFind(object):
 
         if elements is None:
             elements = []
-        for elt in elements:
-            self.add(elt)
+        self.add_arr(elements)
 
 
     def __repr__(self):
