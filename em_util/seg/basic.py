@@ -302,3 +302,24 @@ def seg_biggest_cc(seg, num_conn=None):
     """
     seg = seg_to_cc(seg, num_conn)
     return seg_biggest(seg)    
+
+def seg_unique_id_chunk(input_file, chunk_num=1, no_tqdm=False):
+    if chunk_num == 1:
+        return np.unique(read_h5(input_file))
+    else:
+        uid = []
+        if isinstance(input_file, str):
+            fid = h5py.File(input_file, 'r')
+            seg = fid[list(fid)[0]]
+        else:
+            seg = input_file
+        num_z = int(np.ceil(seg.shape[0] / float(chunk_num)))
+        for i in tqdm(range(chunk_num), disable=no_tqdm):
+            if i == 0:
+                uid = np.unique(np.array(seg[i*num_z:(i+1)*num_z]))
+            else:
+                uid = np.hstack([uid, np.unique(np.array(seg[i*num_z:(i+1)*num_z]))])
+                uid = np.unique(uid)
+        if isinstance(input_file, str):
+            fid.close()
+    return uid
