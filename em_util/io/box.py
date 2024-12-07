@@ -273,7 +273,7 @@ def merge_bbox_two_matrices(bbox_matrix_a, bbox_matrix_b):
     for i in np.where(intersect_id)[0]:
         bbox_a = bbox_matrix_a[i, 1:]
         bbox_b_index = bbox_b_id == bbox_a_id[i]
-        bbox_b = bb_mb[bbox_b_index, 1:][0]
+        bbox_b = bbox_mb[bbox_b_index, 1:][0]
         bbox_mb[bbox_b_index, 1:] = merge_bbox(bbox_a, bbox_b)
     return np.vstack([bbox_matrix_a[np.logical_not(intersect_id)], bbox_mb])
 
