@@ -264,6 +264,14 @@ def merge_bbox_two_matrices(bbox_matrix_a, bbox_matrix_b):
         return bbox_matrix_b 
     if bbox_matrix_b is None:
         return bbox_matrix_a 
+    if not isinstance(bbox_matrix_a, np.ndarray):
+        bbox_matrix_a = np.array(bbox_matrix_a)
+    if not isinstance(bbox_matrix_b, np.ndarray):
+        bbox_matrix_b = np.array(bbox_matrix_b)
+    if bbox_matrix_a.ndim == 1:
+        bbox_matrix_a = bbox_matrix_a.reshape(1,-1) 
+    if bbox_matrix_b.ndim == 1:
+        bbox_matrix_b = bbox_matrix_b.reshape(1,-1) 
     bbox_a_id,  bbox_b_id = bbox_matrix_a[:, 0], bbox_matrix_b[:, 0]
     intersect_id = np.in1d(bbox_a_id, bbox_b_id)
     if intersect_id.sum() == 0:
