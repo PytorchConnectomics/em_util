@@ -1,5 +1,5 @@
 import os
-from .io import read_image, write_json
+from .io import read_image, write_json, read_vol_bbox
 import numpy as np
 
 def get_tile_name(pattern, row=None, column=None):
@@ -39,8 +39,48 @@ def read_tiles_image(pattern, row_ran, col_ran, image_type='image', image_dtype=
                     read_image(get_tile_name(pattern, r, c), image_type)
     return out
 
-   
-def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=None, tile_dtype=np.uint8, tile_type="image", tile_ratio=1, tile_resize_mode=1, tile_border_padding="reflect", tile_blank="", volume_sz=None, zstep=1):
+def read_slice_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, slice_dtype=np.uint8, slice_ratio=1, slice_resize_order=1, volume_sz=None, zstep=1):
+    """
+    Read and assemble a volume from a set of sliced volumes.
+
+    Args:
+        filenames (list): The list of file names for the sliced images.
+        z0p (int): The starting index of the z-axis.
+        z1p (int): The ending index of the z-axis.
+        y0p (int): The starting index of the y-axis.
+        y1p (int): The ending index of the y-axis.
+        x0p (int): The starting index of the x-axis.
+        x1p (int): The ending index of the x-axis.
+        slice_dtype (numpy.dtype, optional): The data type of the slices. Defaults to np.uint8.
+        slice_type (str, optional): "image" or "seg"
+        slice_ratio (float or list, optional): The scaling factor for resizing the slices. If a float is provided, the same ratio is used for both dimensions. Defaults to 1.
+        slice_resize_order (int, optional): The interpolation order for resizing the slices. Defaults to 1.
+
+    Returns:
+        numpy.ndarray: The assembled volume.
+    """
+    if not isinstance(slice_ratio, (list,)):
+        slice_ratio = [slice_ratio, slice_ratio]
+    if volume_sz is not None:
+        z0, y0, x0 = max(z0p, 0), max(y0p, 0), max(x0p, 0)
+        z1, y1, x1 = (
+            min(z1p, volume_sz[0]),
+            min(y1p, volume_sz[1]),
+            min(x1p, volume_sz[2]),
+        )
+    else:
+        z0, y0, x0, z1, y1, x1 = z0p, y0p, x0p, z1p, y1p, x1p
+
+    result = np.zeros(
+        ((z1 - z0 + zstep - 1) // zstep, (y1 - y0)*slice_ratio[0], (x1 - x0)*slice_ratio[1]), slice_dtype
+    )
+    z1 = min(len(filenames) - 1, z1)
+    for i, z in enumerate(range(z0, z1, zstep)):
+        result[i] = read_vol_bbox(filenames[z], [y0,y1,x0,x1], ratio=slice_ratio, resize_order=slice_resize_order)
+    return result
+
+  
+def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=None, tile_dtype=np.uint8, tile_type="image", tile_ratio=1, tile_resize_order=1, tile_border_padding="reflect", tile_blank="", volume_sz=None, zstep=1):
     """
     Read and assemble a volume from a set of tiled images.
 
@@ -57,9 +97,9 @@ def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=N
         tile_dtype (numpy.dtype, optional): The data type of the tiles. Defaults to np.uint8.
         tile_type (str, optional): "image" or "seg"
         tile_ratio (float or list, optional): The scaling factor for resizing the tiles. If a float is provided, the same ratio is used for both dimensions. Defaults to 1.
-        tile_resize_mode (int, optional): The interpolation mode for resizing the tiles. Defaults to 1.
+        tile_resize_order (int, optional): The interpolation order for resizing the tiles. Defaults to 1.
         tile_seg (bool, optional): Whether the tiles represent segmentation maps. Defaults to False.
-        tile_border_padding (str, optional): The padding mode for tiles at the boundary. Defaults to "reflect".
+        tile_border_padding (str, optional): The padding order for tiles at the boundary. Defaults to "reflect".
         tile_blank (str, optional): The value or pattern to fill empty tiles. Defaults to "".
         volume_sz (list, optional): The size of the volume in each dimension. Defaults to None.
         zstep (int, optional): The step size for the z-axis. Defaults to 1.
@@ -72,7 +112,7 @@ def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=N
         - The volume is constructed by arranging the tiles according to their indices.
         - The size of each tile is specified by the `tile_sz` parameter.
         - The tiles can be resized using the `tile_ratio` parameter.
-        - The tiles can be interpolated using the `tile_resize_mode` parameter.
+        - The tiles can be interpolated using the `tile_resize_order` parameter.
         - The tiles can represent either grayscale images or segmentation maps.
         - The volume can be padded at the boundary using the `tile_bd` parameter.
         - Empty tiles can be filled with a value or pattern using the `tile_blank` parameter.
@@ -122,7 +162,7 @@ def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=N
             for column in range(c0, c1):
                 filename = get_tile_name(pattern, row + tile_st[0], column + tile_st[1])
                 if os.path.exists(filename):
-                    patch = read_image(filename, tile_type, tile_ratio, tile_resize_mode)
+                    patch = read_image(filename, tile_type, tile_ratio, tile_resize_order)
                     # exception: last tile may not have the right size
                     psz = patch.shape
                     xp0 = column * tile_sz[1]

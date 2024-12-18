@@ -34,8 +34,8 @@ def mkdir(foldername, opt=""):
             os.mkdir(foldername)
 
 def resize_image(image, ratio=None, resize_order=0):
-    if ratio is None:
-        ratio = [1] * image.ndim
+    if ratio is None or (np.array(ratio)==1).all():
+        return image
     return zoom(image, ratio, order=resize_order)
 
 def read_image(filename, image_type="image", ratio=None, resize_order=None, data_type="2d", crop=None):
@@ -160,6 +160,25 @@ def read_vol_chunk(file_handler, chunk_id=0, chunk_num=1):
         num_z = int(np.ceil(file_handler.shape[0] / float(chunk_num)))
         return np.array(file_handler[chunk_id * num_z : (chunk_id + 1) * num_z])
     
+def read_vol_bbox(filename, bbox, dataset=None, ratio=1, resize_order=0):   
+    if '.h5' in filename:
+        fid = h5py.File(filename, 'r')
+        dataset = fid.keys() if sys.version[0] == "2" else list(fid)
+        result = fid[dataset[0]]
+    else:
+        result = read_vol(filename,dataset)
+
+    if result.ndim == 2:
+        result = result[bbox[0]:bbox[1], bbox[2]:bbox[3]]
+    elif result.ndim == 3:
+        result = result[bbox[0]:bbox[1], bbox[2]:bbox[3], bbox[4]:bbox[5]]
+    if '.h5' in filename:
+        result = np.array(result)
+        fid.close()
+
+    result = resize_image(result, ratio, resize_order)
+    return result
+
 def read_vol(filename, dataset=None, chunk_id=0, chunk_num=1):   
     """
     Read data from various file formats.
