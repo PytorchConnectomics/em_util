@@ -637,7 +637,7 @@ def vol_downsample_chunk(input_file, ratio, output_file=None, output_chunk=8192,
         fid_in = h5py.File(input_file, 'r')
         fid_in_data = fid_in[list(fid_in)[0]]
         fid_out = h5py.File(output_file, "w")
-        vol_sz = np.array(fid_in_data.shape) // ratio
+        vol_sz = (np.array(fid_in_data.shape) + ratio-1) // ratio
         num_z = int(np.ceil(vol_sz[0] / float(chunk_num)))
         # round it to be multiple
         num_z = ((num_z + ratio[0] - 1) // ratio[0]) * ratio[0]
@@ -647,14 +647,14 @@ def vol_downsample_chunk(input_file, ratio, output_file=None, output_chunk=8192,
             compression="gzip", chunks=(num_z,chunk_sz[0],chunk_sz[1]))
 
         for z in tqdm(range(chunk_num), disable=no_tqdm):
-            tmp = read_h5_chunk(fid_in_data, z, chunk_num)[::ratio[0],::ratio[1],::ratio[2]]
+            tmp = read_h5_chunk(fid_in_data, z, chunk_num, num_z*ratio[0], ratio[0])[:, ::ratio[1],::ratio[2]]
             result[z*num_z:(z+1)*num_z] = tmp
 
         fid_in.close()
         fid_out.close()
 
 
-def read_h5_chunk(file_handler, chunk_id=0, chunk_num=1, num_z=-1):
+def read_h5_chunk(file_handler, chunk_id=0, chunk_num=1, num_z=-1, ratio=1):
     """
     Read a chunk of data from a file handler.
 
@@ -676,4 +676,4 @@ def read_h5_chunk(file_handler, chunk_id=0, chunk_num=1, num_z=-1):
         # read a chunk
         if num_z == -1:
             num_z = int(np.ceil(file_handler.shape[0] / float(chunk_num)))
-        return np.array(file_handler[chunk_id * num_z : (chunk_id + 1) * num_z])
+        return np.array(file_handler[chunk_id * num_z : (chunk_id + 1) * num_z: ratio])
