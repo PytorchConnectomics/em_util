@@ -639,6 +639,8 @@ def vol_downsample_chunk(input_file, ratio, output_file=None, output_chunk=8192,
         fid_out = h5py.File(output_file, "w")
         vol_sz = np.array(fid_in_data.shape) // ratio
         num_z = int(np.ceil(vol_sz[0] / float(chunk_num)))
+        # round it to be multiple
+        num_z = ((num_z + ratio[0] - 1) // ratio[0]) * ratio[0]
 
         chunk_sz = get_h5_chunk2d(output_chunk/num_z, vol_sz[1:])
         result = fid_out.create_dataset('main', vol_sz, dtype=fid_in_data.dtype, \
@@ -650,3 +652,28 @@ def vol_downsample_chunk(input_file, ratio, output_file=None, output_chunk=8192,
 
         fid_in.close()
         fid_out.close()
+
+
+def read_h5_chunk(file_handler, chunk_id=0, chunk_num=1, num_z=-1):
+    """
+    Read a chunk of data from a file handler.
+
+    Args:
+        file_handler: The file handler object.
+        chunk_id: The ID of the chunk to read. Defaults to 0.
+        chunk_num: The total number of chunks. Defaults to 1.
+
+    Returns:
+        numpy.ndarray: The read chunk of data.
+    """
+    if chunk_num == 1:
+        # read the whole chunk
+        return np.array(file_handler)
+    elif chunk_num == -1:
+        # read a specific slice
+        return np.array(file_handler[chunk_id])
+    else:
+        # read a chunk
+        if num_z == -1:
+            num_z = int(np.ceil(file_handler.shape[0] / float(chunk_num)))
+        return np.array(file_handler[chunk_id * num_z : (chunk_id + 1) * num_z])
