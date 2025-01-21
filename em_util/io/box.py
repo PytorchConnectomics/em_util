@@ -189,7 +189,7 @@ def merge_bbox(bbox_a, bbox_b):
         numpy.ndarray: The merged bounding box. Each row: [ymin,ymax,xmin,xmax,count(optional)]    
     """
     num_element = len(bbox_a) // 2 * 2
-    out = bbox_a
+    out = bbox_a.copy()
     out[: num_element: 2] = np.minimum(bbox_a[: num_element: 2], 
                                        bbox_b[: num_element: 2])
     out[1: num_element: 2] = np.maximum(bbox_a[1: num_element: 2], 
