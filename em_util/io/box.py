@@ -1,4 +1,5 @@
 import numpy as np
+from .io import get_seg_dtype
 
 
 def compute_bbox(seg, do_count=False):
@@ -87,9 +88,12 @@ def compute_bbox_all_2d(seg, do_count=False, uid=None):
         uid = uid[uid > 0]
     if len(uid) == 0:
         return None
-    uid_max = uid.max()
-    out = np.zeros((1 + int(uid_max), 5 + do_count), dtype=np.uint32)
-    out[:, 0] = np.arange(out.shape[0])
+    # memory efficient
+    uid_max = int(uid.max())
+    sid_dict = dict(zip(uid, range(len(uid))))
+    out = np.zeros((len(uid), 5 + do_count), dtype=int)
+
+    out[:, 0] = uid
     out[:, 1] = sz[0]
     out[:, 3] = sz[1]
     # for each row
@@ -97,19 +101,23 @@ def compute_bbox_all_2d(seg, do_count=False, uid=None):
     for rid in rids:
         sid = np.unique(seg[rid])
         sid = sid[(sid > 0) * (sid <= uid_max)]
-        out[sid, 1] = np.minimum(out[sid, 1], rid)
-        out[sid, 2] = np.maximum(out[sid, 2], rid)
+        sid_ind = [sid_dict[x] for x in sid]
+        out[sid_ind, 1] = np.minimum(out[sid_ind, 1], rid)
+        out[sid_ind, 2] = np.maximum(out[sid_ind, 2], rid)
     cids = np.where((seg > 0).sum(axis=0) > 0)[0]
     for cid in cids:
         sid = np.unique(seg[:, cid])
         sid = sid[(sid > 0) * (sid <= uid_max)]
-        out[sid, 3] = np.minimum(out[sid, 3], cid)
-        out[sid, 4] = np.maximum(out[sid, 4], cid)
+        sid_ind = [sid_dict[x] for x in sid]
+        out[sid_ind, 3] = np.minimum(out[sid_ind, 3], cid)
+        out[sid_ind, 4] = np.maximum(out[sid_ind, 4], cid)
 
     if do_count:
         seg_ui, seg_uc = np.unique(seg, return_counts=True)
-        out[seg_ui, -1] = seg_uc
-    return out[uid]
+        for i,j in zip(seg_ui, seg_uc):
+            if i in sid_dict:
+                out[sid_dict[i], -1] = j
+    return out
 
 
 def compute_bbox_all_3d(seg, do_count=False, uid=None):
@@ -137,8 +145,10 @@ def compute_bbox_all_3d(seg, do_count=False, uid=None):
     if uid is None:
         uid = seg
     uid_max = int(uid.max())
-    out = np.zeros((1 + uid_max, 7 + do_count), dtype=np.int32)
-    out[:, 0] = np.arange(out.shape[0])
+
+    sid_dict = dict(zip(uid, range(len(uid))))
+    out = np.zeros((len(uid), 7 + do_count), dtype=int)
+    out[:, 0] = uid
     out[:, 1] = sz[0]
     out[:, 2] = -1
     out[:, 3] = sz[1]
@@ -151,30 +161,35 @@ def compute_bbox_all_3d(seg, do_count=False, uid=None):
     for zid in zids:
         sid = np.unique(seg[zid])
         sid = sid[(sid > 0) * (sid <= uid_max)]
-        out[sid, 1] = np.minimum(out[sid, 1], zid)
-        out[sid, 2] = np.maximum(out[sid, 2], zid)
+        sid_ind = [sid_dict[x] for x in sid]
+        out[sid_ind, 1] = np.minimum(out[sid_ind, 1], zid)
+        out[sid_ind, 2] = np.maximum(out[sid_ind, 2], zid)
 
     # for each row
     rids = np.where((seg > 0).sum(axis=0).sum(axis=1) > 0)[0]
     for rid in rids:
         sid = np.unique(seg[:, rid])
         sid = sid[(sid > 0) * (sid <= uid_max)]
-        out[sid, 3] = np.minimum(out[sid, 3], rid)
-        out[sid, 4] = np.maximum(out[sid, 4], rid)
+        sid_ind = [sid_dict[x] for x in sid]
+        out[sid_ind, 3] = np.minimum(out[sid_ind, 3], rid)
+        out[sid_ind, 4] = np.maximum(out[sid_ind, 4], rid)
 
     # for each col
     cids = np.where((seg > 0).sum(axis=0).sum(axis=0) > 0)[0]
     for cid in cids:
         sid = np.unique(seg[:, :, cid])
         sid = sid[(sid > 0) * (sid <= uid_max)]
-        out[sid, 5] = np.minimum(out[sid, 5], cid)
-        out[sid, 6] = np.maximum(out[sid, 6], cid)
+        sid_ind = [sid_dict[x] for x in sid]
+        out[sid_ind, 5] = np.minimum(out[sid_ind, 5], cid)
+        out[sid_ind, 6] = np.maximum(out[sid_ind, 6], cid)
 
     if do_count:
         seg_ui, seg_uc = np.unique(seg, return_counts=True)
-        out[seg_ui[seg_ui <= uid_max], -1] = seg_uc[seg_ui <= uid_max]
-
-    return out[np.all(out != -1, axis=-1)].astype(np.uint32)
+        #out[seg_ui[seg_ui <= uid_max], -1] = seg_uc[seg_ui <= uid_max]
+        for i,j in zip(seg_ui, seg_uc):
+            if i in sid_dict:
+                out[sid_dict[i], -1] = j
+    return out
 
 
 def merge_bbox(bbox_a, bbox_b):
@@ -249,17 +264,26 @@ def merge_bbox_two_matrices(bbox_matrix_a, bbox_matrix_b):
         return bbox_matrix_b 
     if bbox_matrix_b is None:
         return bbox_matrix_a 
+    if not isinstance(bbox_matrix_a, np.ndarray):
+        bbox_matrix_a = np.array(bbox_matrix_a)
+    if not isinstance(bbox_matrix_b, np.ndarray):
+        bbox_matrix_b = np.array(bbox_matrix_b)
+    if bbox_matrix_a.ndim == 1:
+        bbox_matrix_a = bbox_matrix_a.reshape(1,-1) 
+    if bbox_matrix_b.ndim == 1:
+        bbox_matrix_b = bbox_matrix_b.reshape(1,-1) 
     bbox_a_id,  bbox_b_id = bbox_matrix_a[:, 0], bbox_matrix_b[:, 0]
     intersect_id = np.in1d(bbox_a_id, bbox_b_id)
     if intersect_id.sum() == 0:
         # no intersection
         return np.vstack([bbox_matrix_a, bbox_matrix_b])
+    bbox_mb = bbox_matrix_b.copy()
     for i in np.where(intersect_id)[0]:
         bbox_a = bbox_matrix_a[i, 1:]
         bbox_b_index = bbox_b_id == bbox_a_id[i]
-        bbox_b = bbox_matrix_b[bbox_b_index, 1:][0]
-        bbox_matrix_b[bbox_b_index, 1:] = merge_bbox(bbox_a, bbox_b)
-    return np.vstack([bbox_matrix_a[np.logical_not(intersect_id)], bbox_matrix_b])
+        bbox_b = bbox_mb[bbox_b_index, 1:][0]
+        bbox_mb[bbox_b_index, 1:] = merge_bbox(bbox_a, bbox_b)
+    return np.vstack([bbox_matrix_a[np.logical_not(intersect_id)], bbox_mb])
 
 
 def merge_bbox_chunk(load_bbox, chunk, chunk_size):

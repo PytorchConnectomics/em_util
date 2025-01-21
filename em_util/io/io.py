@@ -34,8 +34,8 @@ def mkdir(foldername, opt=""):
             os.mkdir(foldername)
 
 def resize_image(image, ratio=None, resize_order=0):
-    if ratio is None:
-        ratio = [1] * image.ndim
+    if ratio is None or (np.array(ratio)==1).all():
+        return image
     return zoom(image, ratio, order=resize_order)
 
 def read_image(filename, image_type="image", ratio=None, resize_order=None, data_type="2d", crop=None):
@@ -160,6 +160,25 @@ def read_vol_chunk(file_handler, chunk_id=0, chunk_num=1):
         num_z = int(np.ceil(file_handler.shape[0] / float(chunk_num)))
         return np.array(file_handler[chunk_id * num_z : (chunk_id + 1) * num_z])
     
+def read_vol_bbox(filename, bbox, dataset=None, ratio=1, resize_order=0):   
+    if '.h5' in filename:
+        fid = h5py.File(filename, 'r')
+        dataset = fid.keys() if sys.version[0] == "2" else list(fid)
+        result = fid[dataset[0]]
+    else:
+        result = read_vol(filename,dataset)
+
+    if result.ndim == 2:
+        result = result[bbox[0]:bbox[1], bbox[2]:bbox[3]]
+    elif result.ndim == 3:
+        result = result[bbox[0]:bbox[1], bbox[2]:bbox[3], bbox[4]:bbox[5]]
+    if '.h5' in filename:
+        result = np.array(result)
+        fid.close()
+
+    result = resize_image(result, ratio, resize_order)
+    return result
+
 def read_vol(filename, dataset=None, chunk_id=0, chunk_num=1):   
     """
     Read data from various file formats.
@@ -533,3 +552,128 @@ def rgb_to_seg(seg):
         )
 
 
+def vol_to_skel(
+    labels,
+    scale=4,
+    const=500,
+    obj_ids=None,
+    dust_size=100,
+    res=(32, 32, 30),
+    num_thread=1,
+):
+    import kimimaro
+    """
+    The `vol_to_skel` function takes in a label image and returns the skeletonized version of the
+    objects in the image using the Kimimaro library.
+
+    :param labels: The input labels represent a 3D volume where each voxel is assigned a unique integer
+    label. These labels typically represent different objects or regions in the volume
+    :param scale: The scale parameter determines the scale at which the skeletonization is performed. It
+    is used to control the level of detail in the resulting skeleton. Higher values of scale will result
+    in a coarser skeleton, while lower values will result in a more detailed skeleton, defaults to 4
+    (optional)
+    :param const: The `const` parameter is a physical unit that determines the resolution of the
+    skeletonization process. It represents the distance between two points in the skeletonized output. A
+    higher value of `const` will result in a coarser skeleton, while a lower value will result in a
+    finer skeleton, defaults to 500 (optional)
+    :param obj_ids: The obj_ids parameter is a list of object IDs that specifies which labels in the
+    input image should be processed. If obj_ids is set to None, it will default to all unique labels
+    greater than 0 in the input image
+    :param dust_size: The dust_size parameter specifies the minimum size (in terms of number of voxels)
+    for connected components to be considered as valid objects. Connected components with fewer voxels
+    than the dust_size will be skipped and not processed, defaults to 100 (optional)
+    :param res: The "res" parameter specifies the resolution of the input volume data. It is a tuple of
+    three values representing the voxel size in each dimension. For example, (32, 32, 30) means that the
+    voxel size is 32 units in the x and y dimensions, and 30
+    :param num_thread: The `num_thread` parameter specifies the number of threads to use for parallel
+    processing. A value of 1 means single-threaded processing, while a value greater than 1 indicates
+    multi-threaded processing. A value of 0 or less indicates that all available CPU cores should be
+    used for parallel processing, defaults to 1 (optional)
+    :return: The function `skeletonize` returns the result of the `kimimaro.skeletonize` function, which
+    is the skeletonized version of the input labels.
+    """
+    if obj_ids is None:
+        obj_ids = np.unique(labels)
+        obj_ids = list(obj_ids[obj_ids > 0])
+    return kimimaro.skeletonize(
+        labels,
+        teasar_params={
+            "scale": scale,
+            "const": const,  # physical units
+            "pdrf_exponent": 4,
+            "pdrf_scale": 100000,
+            "soma_detection_threshold": 1100,  # physical units
+            "soma_acceptance_threshold": 3500,  # physical units
+            "soma_invalidation_scale": 1.0,
+            "soma_invalidation_const": 300,  # physical units
+            "max_paths": 50,  # default  None
+        },
+        object_ids=obj_ids,  # process only the specified labels
+        # object_ids=[ ... ], # process only the specified labels
+        # extra_targets_before=[ (27,33,100), (44,45,46) ], # target points in voxels
+        # extra_targets_after=[ (27,33,100), (44,45,46) ], # target points in voxels
+        dust_threshold=dust_size,  # skip connected components with fewer than this many voxels
+        #       anisotropy=(30,30,30), # default True
+        anisotropy=res,  # default True
+        fix_branching=True,  # default True
+        fix_borders=True,  # default True
+        progress=True,  # default False, show progress bar
+        parallel=num_thread,  # <= 0 all cpu, 1 single process, 2+ multiprocess
+        parallel_chunk_size=100,  # how many skeletons to process before updating progress bar
+    )
+
+def get_h5_chunk2d(target_size=8192, min_size=8192):
+    return np.minimum(min_size, int(2**np.ceil(np.log2(np.sqrt(target_size)))))
+
+def vol_downsample_chunk(input_file, ratio, output_file=None, output_chunk=8192, chunk_num=1, no_tqdm=False):
+    if output_file is None or chunk_num==1:
+        vol = read_h5(input_file)
+        vol = vol[::ratio[0], ::ratio[1], ::ratio[2]]
+        if output_file is None:
+            return vol
+        else:
+            write_h5(output_file, vol)
+    else:
+        fid_in = h5py.File(input_file, 'r')
+        fid_in_data = fid_in[list(fid_in)[0]]
+        fid_out = h5py.File(output_file, "w")
+        vol_sz = (np.array(fid_in_data.shape) + ratio-1) // ratio
+        num_z = int(np.ceil(vol_sz[0] / float(chunk_num)))
+        # round it to be multiple
+        num_z = ((num_z + ratio[0] - 1) // ratio[0]) * ratio[0]
+
+        chunk_sz = get_h5_chunk2d(output_chunk/num_z, vol_sz[1:])
+        result = fid_out.create_dataset('main', vol_sz, dtype=fid_in_data.dtype, \
+            compression="gzip", chunks=(num_z,chunk_sz[0],chunk_sz[1]))
+
+        for z in tqdm(range(chunk_num), disable=no_tqdm):
+            tmp = read_h5_chunk(fid_in_data, z, chunk_num, num_z*ratio[0], ratio[0])[:, ::ratio[1],::ratio[2]]
+            result[z*num_z:(z+1)*num_z] = tmp
+
+        fid_in.close()
+        fid_out.close()
+
+
+def read_h5_chunk(file_handler, chunk_id=0, chunk_num=1, num_z=-1, ratio=1):
+    """
+    Read a chunk of data from a file handler.
+
+    Args:
+        file_handler: The file handler object.
+        chunk_id: The ID of the chunk to read. Defaults to 0.
+        chunk_num: The total number of chunks. Defaults to 1.
+
+    Returns:
+        numpy.ndarray: The read chunk of data.
+    """
+    if chunk_num == 1:
+        # read the whole chunk
+        return np.array(file_handler)
+    elif chunk_num == -1:
+        # read a specific slice
+        return np.array(file_handler[chunk_id])
+    else:
+        # read a chunk
+        if num_z == -1:
+            num_z = int(np.ceil(file_handler.shape[0] / float(chunk_num)))
+        return np.array(file_handler[chunk_id * num_z : (chunk_id + 1) * num_z: ratio])
