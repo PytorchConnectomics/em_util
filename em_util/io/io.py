@@ -137,29 +137,7 @@ def write_image_folder(
         write_image(get_filename(filename, index, i), data[i], image_type) 
 
 
-def read_vol_chunk(file_handler, chunk_id=0, chunk_num=1):
-    """
-    Read a chunk of data from a file handler.
-
-    Args:
-        file_handler: The file handler object.
-        chunk_id: The ID of the chunk to read. Defaults to 0.
-        chunk_num: The total number of chunks. Defaults to 1.
-
-    Returns:
-        numpy.ndarray: The read chunk of data.
-    """
-    if chunk_num == 1:
-        # read the whole chunk
-        return np.array(file_handler)
-    elif chunk_num == -1:
-        # read a specific slice
-        return np.array(file_handler[chunk_id])
-    else:
-        # read a chunk
-        num_z = int(np.ceil(file_handler.shape[0] / float(chunk_num)))
-        return np.array(file_handler[chunk_id * num_z : (chunk_id + 1) * num_z])
-    
+   
 def read_vol_bbox(filename, bbox, dataset=None, ratio=1, resize_order=0):   
     if '.h5' in filename:
         fid = h5py.File(filename, 'r')
@@ -625,55 +603,4 @@ def vol_to_skel(
 def get_h5_chunk2d(target_size=8192, min_size=8192):
     return np.minimum(min_size, int(2**np.ceil(np.log2(np.sqrt(target_size)))))
 
-def vol_downsample_chunk(input_file, ratio, output_file=None, output_chunk=8192, chunk_num=1, no_tqdm=False):
-    if output_file is None or chunk_num==1:
-        vol = read_h5(input_file)
-        vol = vol[::ratio[0], ::ratio[1], ::ratio[2]]
-        if output_file is None:
-            return vol
-        else:
-            write_h5(output_file, vol)
-    else:
-        fid_in = h5py.File(input_file, 'r')
-        fid_in_data = fid_in[list(fid_in)[0]]
-        fid_out = h5py.File(output_file, "w")
-        vol_sz = (np.array(fid_in_data.shape) + ratio-1) // ratio
-        num_z = int(np.ceil(vol_sz[0] / float(chunk_num)))
-        # round it to be multiple
-        num_z = ((num_z + ratio[0] - 1) // ratio[0]) * ratio[0]
 
-        chunk_sz = get_h5_chunk2d(output_chunk/num_z, vol_sz[1:])
-        result = fid_out.create_dataset('main', vol_sz, dtype=fid_in_data.dtype, \
-            compression="gzip", chunks=(num_z,chunk_sz[0],chunk_sz[1]))
-
-        for z in tqdm(range(chunk_num), disable=no_tqdm):
-            tmp = read_h5_chunk(fid_in_data, z, chunk_num, num_z*ratio[0], ratio[0])[:, ::ratio[1],::ratio[2]]
-            result[z*num_z:(z+1)*num_z] = tmp
-
-        fid_in.close()
-        fid_out.close()
-
-
-def read_h5_chunk(file_handler, chunk_id=0, chunk_num=1, num_z=-1, ratio=1):
-    """
-    Read a chunk of data from a file handler.
-
-    Args:
-        file_handler: The file handler object.
-        chunk_id: The ID of the chunk to read. Defaults to 0.
-        chunk_num: The total number of chunks. Defaults to 1.
-
-    Returns:
-        numpy.ndarray: The read chunk of data.
-    """
-    if chunk_num == 1:
-        # read the whole chunk
-        return np.array(file_handler)
-    elif chunk_num == -1:
-        # read a specific slice
-        return np.array(file_handler[chunk_id])
-    else:
-        # read a chunk
-        if num_z == -1:
-            num_z = int(np.ceil(file_handler.shape[0] / float(chunk_num)))
-        return np.array(file_handler[chunk_id * num_z : (chunk_id + 1) * num_z: ratio])

@@ -286,63 +286,6 @@ def merge_bbox_two_matrices(bbox_matrix_a, bbox_matrix_b):
     return np.vstack([bbox_matrix_a[np.logical_not(intersect_id)], bbox_mb])
 
 
-def merge_bbox_chunk(load_bbox, chunk, chunk_size):
-    """
-    Merge bounding boxes from chunks.
-
-    Args:
-        load_bbox (function): A function to load the bounding box for a given chunk.
-        chunk (tuple): The dimensions of the chunk in each dimension.
-        chunk_size (tuple): The size of each chunk in each dimension.
-
-    Returns:
-        numpy.ndarray: The merged bounding boxes.
-
-    Notes:
-        - The `load_bbox` function should take the chunk coordinates as arguments and return the bounding box for that chunk.
-        - The `chunk` argument specifies the number of chunks in each dimension.
-        - The `chunk_size` argument specifies the size of each chunk in each dimension.
-        - The function iterates over each chunk, loads the bounding box, and merges them using the `merge_bbox_two_matrices` function.
-        - The merged bounding boxes are returned as a numpy array.
-    """
-    num_dim = len(chunk)
-    out = None
-    if num_dim == 2:
-        # merge 2D chunks    
-        for xi in range(chunk[1]):
-            for yi in range(chunk[0]):
-                bbox = load_bbox(yi, xi)
-                if bbox is not None:
-                    # update the local coordinates to global coordinates
-                    bbox[:, 1:5] += [
-                        chunk_size[0] * yi,
-                        chunk_size[0] * yi,
-                        chunk_size[1] * xi,
-                        chunk_size[1] * xi,
-                    ]                    
-                    out = merge_bbox_two_matrices(out, bbox)
-    elif num_dim == 3:
-        # merge 3D chunks        
-        for xi in range(chunk[2]):
-            for yi in range(chunk[1]):
-                for zi in range(chunk[0]):
-                    bbox = load_bbox(zi, yi, xi)
-                    if bbox is not None:
-                        # update the local coordinates to global coordinates
-                        if bbox.ndim == 1:
-                            bbox = bbox.reshape(1, -1)
-                        bbox[:, 1:7] += [
-                            chunk_size[0] * zi,
-                            chunk_size[0] * zi,
-                            chunk_size[1] * yi,
-                            chunk_size[1] * yi,
-                            chunk_size[2] * xi,
-                            chunk_size[2] * xi,
-                        ]
-                        out = merge_bbox_two_matrices(out, bbox)
-    
-    return out
-
 def count_bbox_border(bbox, volume_size=None):
     # bbox: Nx4 or Nx6
     if ran is None:

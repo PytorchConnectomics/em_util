@@ -1,9 +1,6 @@
 import numpy as np
 
-def split_arr_by_chunk(index, chunk_id, chunk_num, overlap=0):
-    num = np.ceil(len(index) / float(chunk_num)).astype(int)
-    return index[num * chunk_id : num * (chunk_id + 1) + overlap]
-    
+   
 
 def arr_dim_convertor(arr, factor=10000):
     if arr.shape[1] == 3:

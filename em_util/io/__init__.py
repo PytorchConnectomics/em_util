@@ -5,3 +5,4 @@ from .tile import *
 from .skel import *
 from .box import *
 from .image import *
+from .chunk import *
