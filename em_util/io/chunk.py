@@ -8,7 +8,7 @@ def split_arr_by_chunk(index, chunk_id, chunk_num, overlap=0):
     num = np.ceil(len(index) / float(chunk_num)).astype(int)
     return index[num * chunk_id : num * (chunk_id + 1) + overlap]
 
-def vol_func_chunk(input_file, vol_func, output_file=None, output_chunk=8192, chunk_num=1, no_tqdm=False):
+def vol_func_chunk(input_file, vol_func, output_file=None, output_chunk=8192, chunk_num=1, no_tqdm=False, dtype=None):
     if output_file is None or chunk_num==1:
         vol = read_h5(input_file)
         vol = vol_func(vol)
@@ -24,7 +24,8 @@ def vol_func_chunk(input_file, vol_func, output_file=None, output_chunk=8192, ch
         num_z = int(np.ceil(vol_sz[0] / float(chunk_num)))
 
         chunk_sz = get_h5_chunk2d(output_chunk/num_z, vol_sz[1:])
-        result = fid_out.create_dataset('main', vol_sz, dtype=fid_in_data.dtype, \
+        dtype = fid_in_data.dtype if dtype is None else dtype
+        result = fid_out.create_dataset('main', vol_sz, dtype=dtype, \
             compression="gzip", chunks=(num_z,chunk_sz[0],chunk_sz[1]))
 
         for z in tqdm(range(chunk_num), disable=no_tqdm):

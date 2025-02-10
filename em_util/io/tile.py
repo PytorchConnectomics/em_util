@@ -82,7 +82,7 @@ def read_slice_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, slice_dtype=np.ui
     return result
 
   
-def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=None, tile_dtype=np.uint8, tile_type="image", tile_ratio=1, tile_resize_order=1, tile_border_padding="reflect", tile_blank="", volume_sz=None, zstep=1):
+def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=None, tile_dtype=np.uint8, tile_type="image", tile_ratio=1, tile_resize_order=1, tile_border_padding="reflect", tile_blank="", volume_sz=None, zstep=1, output_file=None, output_chunk=16384, no_tqdm=False):
     """
     Read and assemble a volume from a set of tiled images.
 
@@ -149,16 +149,23 @@ def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=N
         )
     else:
         z0, y0, x0, z1, y1, x1 = z0p, y0p, x0p, z1p, y1p, x1p
-
-    result = np.zeros(
-        ((z1 - z0 + zstep - 1) // zstep, y1 - y0, x1 - x0), tile_dtype
-    )
+    
+    if output_file is None:
+        result = np.zeros(
+            ((z1 - z0 + zstep - 1) // zstep, y1 - y0, x1 - x0), tile_dtype
+        )
+    else:
+        fid_out = h5py.File(output_file, 'w')
+        num_z = (z1 - z0 + zstep - 1) // zstep
+        chunk_sz = get_h5_chunk2d(output_chunk, [y1 - y0, x1 - x0])
+        result = fid_out.create_dataset('main', (num_z, y1-y0, x1-x0), \
+                dtype=tile_dtype, compression="gzip", chunks=tuple([1,chunk_sz[0],chunk_sz[1]]))
     c0 = x0 // tile_sz[1]  # floor
     c1 = (x1 + tile_sz[1] - 1) // tile_sz[1]  # ceil
     r0 = y0 // tile_sz[0]
     r1 = (y1 + tile_sz[0] - 1) // tile_sz[0]
     z1 = min(len(filenames) - 1, z1)
-    for i, z in enumerate(range(z0, z1, zstep)):
+    for i, z in tqdm(enumerate(range(z0, z1, zstep)), disable=no_tqdm):
         pattern = filenames[z]
         for row in range(r0, r1):
             for column in range(c0, c1):
@@ -197,12 +204,16 @@ def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=N
                 if not np.any(result[z] > 0):
                     result[z] = result[z - 1]
 
-    # boundary case
-    if bd is not None and max(bd) > 0:
-        result = np.pad(
-            result, ((bd[0], bd[1]), (bd[2], bd[3]), (bd[4], bd[5])), tile_border_padding
-        )
-    return result
+    if output_file is None:
+        # boundary case
+        if bd is not None and max(bd) > 0:
+            result = np.pad(
+                result, ((bd[0], bd[1]), (bd[2], bd[3]), (bd[4], bd[5])), tile_border_padding
+            )
+        return result
+    else:
+        if '.h5' in output_file:
+            fid_out.close()
 
 
 def write_tile_info(sz, numT, imN, tsz=1024, tile_st=None, zPad=None, im_id=None, outName=None, st=0, ndim=1, rsz=1, dt="uint8"):
@@ -245,9 +256,9 @@ def write_tile_info(sz, numT, imN, tsz=1024, tile_st=None, zPad=None, im_id=None
         write_json(outName, out)
 
 
-def read_tile_h5_by_bbox(h5_name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], \
+def read_tile_h5_volume(h5_name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], \
     cid=-1, dt=np.uint16, zz=[0,0,-1], tile_step=1, zstep=1, acc_id = False, \
-        h5_key='main', no_tqdm=False, output_file=None, output_chunk=8192, tile_type='image', mask=None, h5_func=None):
+        h5_key='main', no_tqdm=False, output_file=None, output_chunk=16384, tile_type='image', mask=None, h5_func=None):
     if not isinstance(tile_step, (list,)):
         tile_step = [tile_step, tile_step]
     # zz: extra number of slices in the first and last chunk 

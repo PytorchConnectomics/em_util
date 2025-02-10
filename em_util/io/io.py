@@ -432,9 +432,9 @@ def write_json(filename, content):
     with open(filename, "w") as fid:
         json.dump(filename, fid)            
 
-def get_volume_size_h5(filename, dataset_name=None):
+def get_h5_shape(filename, dataset_name=None):
     """
-    The function `get_volume_size_h5` returns the size of a dataset in an HDF5 file, or the size of the
+    The function `get_h5_shape` returns the size of a dataset in an HDF5 file, or the size of the
     first dataset if no dataset name is provided.
 
     :param filename: The filename parameter is the name of the HDF5 file that you want to read
@@ -443,12 +443,14 @@ def get_volume_size_h5(filename, dataset_name=None):
     dataset in the file and return its shape as the volume size
     :return: the size of the volume as a list.
     """
-    volume_size = []
     fid = h5py.File(filename, "r")
     if dataset_name is None:
         dataset_name = fid.keys() if sys.version[0] == "2" else list(fid)
-        if len(dataset_name) > 0:
-            volume_size = fid[dataset_name[0]].shape
+    else:
+        if not isinstance(dataset_name, list):
+            dataset_name = list(dataset_name)
+    
+    volume_size = [fid[x].shape for x in dataset_name]
     fid.close()
     return volume_size
 
