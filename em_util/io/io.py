@@ -224,7 +224,7 @@ def read_zarr(filename, dataset=None, chunk_id=0, chunk_num=1):
     
     return read_vol_chunk(fid[dataset], chunk_id, chunk_num)
     
-def read_h5(filename, dataset=None, chunk_id=0, chunk_num=1):
+def read_h5(filename, dataset=None):
     """
     Read data from an HDF5 file.
 
@@ -247,7 +247,7 @@ def read_h5(filename, dataset=None, chunk_id=0, chunk_num=1):
 
     out = [None] * len(dataset)
     for di, d in enumerate(dataset):
-        out[di] = read_vol_chunk(fid[d], chunk_id, chunk_num)
+        out[di] = np.array(fid[d])
 
     return out[0] if len(out) == 1 else out
 
