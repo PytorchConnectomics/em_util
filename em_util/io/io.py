@@ -432,9 +432,9 @@ def write_json(filename, content):
     with open(filename, "w") as fid:
         json.dump(filename, fid)            
 
-def get_h5_shape(filename, dataset_name=None):
+def get_file_vol_shape(filename, dataset_name=None):
     """
-    The function `get_h5_shape` returns the size of a dataset in an HDF5 file, or the size of the
+    The function `get_file_shape` returns the size of a dataset in an Tif or HDF5 file, or the size of the
     first dataset if no dataset name is provided.
 
     :param filename: The filename parameter is the name of the HDF5 file that you want to read
@@ -443,15 +443,20 @@ def get_h5_shape(filename, dataset_name=None):
     dataset in the file and return its shape as the volume size
     :return: the size of the volume as a list.
     """
-    fid = h5py.File(filename, "r")
-    if dataset_name is None:
-        dataset_name = fid.keys() if sys.version[0] == "2" else list(fid)
-    else:
-        if not isinstance(dataset_name, list):
-            dataset_name = list(dataset_name)
-    
-    volume_size = [fid[x].shape for x in dataset_name]
-    fid.close()
+    if '.h5' in filename:
+        fid = h5py.File(filename, "r")
+        if dataset_name is None:
+            dataset_name = fid.keys() if sys.version[0] == "2" else list(fid)
+        else:
+            if not isinstance(dataset_name, list):
+                dataset_name = list(dataset_name)
+        
+        volume_size = [fid[x].shape for x in dataset_name]
+        fid.close()
+    elif '.tif' or 'tiff' in filename:
+        from tifffile import TiffFile
+        with TiffFile(filename) as tif:
+            volume_size = [[len(tif.pages)] + list(tif.pages[0].shape)]
     return volume_size
 
 def get_seg_dtype(mid):
