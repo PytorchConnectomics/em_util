@@ -251,34 +251,6 @@ def read_h5(filename, dataset=None):
 
     return out[0] if len(out) == 1 else out
 
-def read_h5_shape(filename, dataset=None):
-    """
-    Read the shape of the data from an HDF5 file.
-
-    Args:
-        filename (str): The path to the HDF5 file.
-        dataset (str or list, optional): The name or names of the dataset(s) to read. Defaults to None.
-
-    Returns:
-        tuple or list: The shape of data from the HDF5 file.
-
-    """
-
-    with h5py.File(filename, 'r') as fid:
-        if dataset is None:
-            dataset = fid.keys() if sys.version[0] == "2" else list(fid)
-            print(f'h5 keys are: {dataset}')
-        else:
-            if not isinstance(dataset, list):
-                dataset = [dataset]
-
-        out = [None] * len(dataset)
-        for di, d in enumerate(dataset):
-            out[di] = fid[d].shape
-
-    return out[0] if len(out) == 1 else out
-
-
 
 def write_h5(filename, data, dataset="main"):
     """
