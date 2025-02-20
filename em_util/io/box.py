@@ -143,7 +143,8 @@ def compute_bbox_all_3d(seg, do_count=False, uid=None):
     sz = seg.shape
     assert len(sz) == 3, "Input segment should have 3 dimensions"
     if uid is None:
-        uid = seg
+        uid = np.unique(seg)
+        uid = uid[uid > 0]
     uid_max = int(uid.max())
 
     sid_dict = dict(zip(uid, range(len(uid))))
