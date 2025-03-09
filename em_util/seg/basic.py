@@ -142,9 +142,10 @@ def seg_remove_id(seg, bid, invert=False):
     return rl[seg]
 
 def seg_remove_small(seg, threshold=100, invert=False):
-    uid, uc = np.unique(seg, return_counts=True)
-    bid = uid[uc < threshold]
-    seg = seg_remove_id(seg, bid, invert)
+    if (seg>0).any():
+        uid, uc = np.unique(seg, return_counts=True)
+        bid = uid[uc < threshold]
+        seg = seg_remove_id(seg, bid, invert)
     return seg
             
 def seg_biggest(seg):
