@@ -1,7 +1,7 @@
 import numpy as np
 from skimage.morphology import remove_small_objects
 from tqdm import tqdm
-from ..io import read_vol, compute_bbox_all, read_vol, write_h5, read_h5_shape
+from ..io import read_vol, compute_bbox_all, read_vol, write_h5
 
 
 def seg_to_iou(seg0, seg1, uid0=None, bb0=None, uid1=None, uc1=None, th_iou=0):
