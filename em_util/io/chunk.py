@@ -2,7 +2,7 @@ import numpy as np
 import h5py
 from tqdm import tqdm
 from .io import read_h5, write_h5, get_h5_chunk2d
-from .box import merge_bbox_two_matrices
+from .box import compute_bbox_all, merge_bbox_two_matrices
 
 def split_arr_by_chunk(index, chunk_id, chunk_num, overlap=0):
     num = np.ceil(len(index) / float(chunk_num)).astype(int)
@@ -166,4 +166,22 @@ def merge_bbox_chunk(load_bbox, chunk, chunk_size):
     
     return out
 
-
+def compute_bbox_all_chunk(seg_file, do_count=False, uid=None, chunk_num=1, no_tqdm=False):
+    if chunk_num == 1:
+        if isinstance(seg_file):
+            seg_file = read_h5(seg_file)
+        return compute_bbox_all(seg_file, do_count, uid)
+    else:
+        fid = h5py.File(seg_file, 'r')
+        seg = fid[list(fid)[0]]
+        num_z = int(np.ceil(seg.shape[0] / float(chunk_num)))
+        out = []
+        for i in tqdm(range(chunk_num), disable=no_tqdm):
+            chunk_bbox = compute_bbox_all(np.array(seg[i*num_z: (i+1)*num_z]), do_count, uid)
+            chunk_bbox[:,1:3] += i*num_z
+            if i == 0:
+                out = chunk_bbox.copy()
+            else:
+                out = merge_bbox_two_matrices(out, chunk_bbox)
+        fid.close()
+        return out
