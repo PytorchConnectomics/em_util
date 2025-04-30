@@ -251,13 +251,47 @@ class UnionFind(object):
         vfind = np.vectorize(self.find)
         roots = vfind(elts)
         distinct_roots = set(roots)
-        return [set(elts[roots == root]) for root in distinct_roots]
-        # comps = []
-        # for root in distinct_roots:
-        #     mask = (roots == root)
-        #     comp = set(elts[mask])
-        #     comps.append(comp)
-        # return comps
+        return [set(elts[roots == root]) for root in distinct_roots]        
+
+    def component_relabel_arr(self):        
+        """
+        Generate an array that maps each element to the minimum element in its connected component.
+
+        This method creates a relabeling array where each element in the UnionFind structure
+        is mapped to the smallest element in its connected component. If an element belongs
+        to a component of size 1, it maps to itself.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            A NumPy array where the index represents an element, and the value at that index
+            is the smallest element in the same connected component. If there are no elements
+            in the UnionFind structure, returns `None`.
+
+        Notes
+        -----
+        - The relabeling array is constructed based on the connected components of the UnionFind structure.
+        - Components with only one element are mapped to themselves.
+        - The dtype of the relabeling array matches the dtype of the elements in the UnionFind structure.
+
+        Examples
+        --------
+        >>> uf = UnionFind([0, 1, 2, 3])
+        >>> uf.union(0, 1)
+        >>> uf.union(2, 3)
+        >>> uf.component_relabel_arr()
+        array([0, 0, 2, 2])
+        """        
+        relabel_arr = None
+        if self.n_elts > 0:
+            max_id = max(self._elts) 
+            relabel_arr = np.arange(max_id+1).astype(type(self._elts[0]))
+            for component in self.components():
+                if len(component) > 1:
+                    cid = min(component)
+                    relabel_arr[np.array(list(component), dtype=int)] = cid
+        
+        return relabel_arr
 
     def component_mapping(self):
         """Return a dict mapping elements to their components.
