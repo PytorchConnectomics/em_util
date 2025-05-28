@@ -383,3 +383,22 @@ def get_tile_coord(xx, yy, zz, num):
                 y1 = yy[0]+(y+1)*ys if y!=num[1]-1 else yy[1]
                 out_tile_txt += '%d %d %d %d %d %d\n'%(x0,x1,y0,y1,z0,z1)
     return out_tile_txt
+
+def tile_merge_syn_ins(seg0, seg, count0, count):
+    # convert syn pre/post label to the same label
+    if seg0.max() != 0 and seg.max() != 0:
+        ind1, ind2 = seg0%2==0, seg0%2==1
+        seg0[ind1], seg0[ind2] = seg0[ind1]//2, (seg0[ind2]+1)//2
+        ind1, ind2 = seg%2==0, seg%2==1
+        seg[ind1], seg[ind2] = seg[ind1]//2, (seg[ind2]+1)//2
+        # find unique non-zero pair
+        mm0 = np.unique(np.hstack([seg0.reshape(-1,1), seg.reshape(-1,1)]), axis=0)
+        mm0 = mm0[mm0.min(axis=1)!=0] # remove non-zero pairs
+        if len(mm0) != 0:
+            # convert back to pre-pre, post-post matching
+            mm0 = np.vstack([mm0*2, mm0*2-1]).astype(count.dtype)
+            mm0[:, 0] += count0
+            mm0[:, 1] += count
+        return mm0
+    else:
+        return np.zeros([0,2])
