@@ -367,3 +367,19 @@ def read_tile_h5_volume(h5_name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], \
     if '.h5' in output_file:
         fid_out.close()
     return result
+
+def get_tile_coord(xx, yy, zz, num):
+    # generate tile coordinate from volume range and tile number
+    out_tile_txt = ''        
+    xs, ys, zs = (xx[1]-xx[0])//num[0], (yy[1]-yy[0])//num[1], (zz[1]-zz[0])//num[2]
+    for z in range(num[2]):
+        z0 = z*zs
+        z1 = (z+1)*zs if z!=num[2]-1 else zz[1]
+        for x in range(num[0]):
+            for y in range(num[1]):
+                x0 = xx[0]+x*xs
+                x1 = xx[0]+(x+1)*xs if x!=num[0]-1 else xx[1]
+                y0 = yy[0]+y*ys
+                y1 = yy[0]+(y+1)*ys if y!=num[1]-1 else yy[1]
+                out_tile_txt += '%d %d %d %d %d %d\n'%(x0,x1,y0,y1,z0,z1)
+    return out_tile_txt
