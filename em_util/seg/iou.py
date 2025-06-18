@@ -44,18 +44,25 @@ def seg_to_iou(seg0, seg1, uid0=None, bb0=None, uid1=None, uc1=None, th_iou=0):
     if uid0 is None:
         if bb0 is None:
             bb0 = compute_bbox_all(seg0, True)
-        uid0 = bb0[:, 0]
+        uid0 = bb0[:, 0] if bb0 is not None else []
     elif bb0 is None:
         bb0 = compute_bbox_all(seg0, True, uid0)
     else:
         # select the boxes correspond to uid0
         bb0 = bb0[np.in1d(bb0[:, 0], uid0)]
         uid0 = bb0[:, 0]
+
+    if len(uid0) == 0:
+        return np.zeros((0, 5), int)
     uc0 = bb0[:, -1]
+
 
     # seg1 info: uid1, uc1
     if uid1 is None or uc1 is None:
         uid1, uc1 = np.unique(seg1, return_counts=True)
+
+    if len(uid1) == 0:
+        return np.zeros((0, 5), int)
 
     out = np.zeros((len(uid0), 5), int)
     out[:, 0] = uid0
