@@ -73,7 +73,7 @@ def get_parser():
         "--partition",
         type=str,
         help="",
-        default="lichtman",
+        default="",
     )
     parser.add_argument(
         "-cm",
