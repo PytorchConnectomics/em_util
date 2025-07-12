@@ -564,6 +564,7 @@ class NgDataset(object):
                     # read tiles
                     # input/output dimension order: z,y,x
                     # convert to global coord if mip_ratio[0]!=[0,0,0]
+                    # convert it to original image resolution 
                     ims = getVolume(
                         z0, z1, y0[0], y1[0], x0[0], x1[0], self.mip_ratio[0]
                     )
@@ -606,8 +607,8 @@ class NgDataset(object):
                                     )
 
                             # save image into tiles
-                            if zz % m_zres[i] == 0:
-                                zzl = (zz // m_zres[i]) % (self.chunk_size[2])
+                            if zz % (m_zres[i]//m_zres[0]) == 0:
+                                zzl = (zz // (m_zres[i]//m_zres[0])) % (self.chunk_size[2])
                                 if i < m_mip_id:  # write the whole tile
                                     m_tiles[i][
                                         : im.shape[0], : im.shape[1], zzl
@@ -635,13 +636,11 @@ class NgDataset(object):
                         for i in [ii for ii in mip_levels if ii < m_mip_id]:
                             # chunk filled or last image
                             if (zz + 1) % (
-                                m_zres[i] * self.chunk_size[2]
+                                (m_zres[i]//m_zres[0]) * self.chunk_size[2]
                             ) == 0 or (z == num_chunk[2] - 1) * (zz == z1 - 1):
                                 # take the ceil for the last chunk
-                                z1g = (zz + m_zres[i]) // m_zres[i]
-                                z0g = (
-                                    (z1g - 1) // self.chunk_size[2]
-                                ) * self.chunk_size[2]
+                                z1g = (zz + 1 + (m_zres[i]//m_zres[0]) - 1) // (m_zres[i]//m_zres[0])
+                                z0g = z1g - self.chunk_size[2]
                                 # check volume align
                                 if (
                                     m_tiles[i][
@@ -652,21 +651,24 @@ class NgDataset(object):
                                     ].max()
                                     > 0
                                 ):
-                                    m_vols[i][
-                                        x0[i]
-                                        + m_oset[i][0] : x1[i]
-                                        + m_oset[i][0],
-                                        y0[i]
-                                        + m_oset[i][1] : y1[i]
-                                        + m_oset[i][1],
-                                        z0g + m_oset[i][2] : z1g + m_oset[i][2],
-                                        :,
-                                    ] = m_tiles[i][
-                                        : x1[i] - x0[i],
-                                        : y1[i] - y0[i],
-                                        : z1g - z0g,
-                                        :,
-                                    ]
+                                    try:
+                                        m_vols[i][
+                                            x0[i]
+                                            + m_oset[i][0] : x1[i]
+                                            + m_oset[i][0],
+                                            y0[i]
+                                            + m_oset[i][1] : y1[i]
+                                            + m_oset[i][1],
+                                            z0g + m_oset[i][2] : z1g + m_oset[i][2],
+                                            :,
+                                        ] = m_tiles[i][
+                                            : x1[i] - x0[i],
+                                            : y1[i] - y0[i],
+                                            : z1g - z0g,
+                                            :,
+                                        ]
+                                    except:
+                                        import pdb;pdb.set_trace()
                                     # print(i, z0g, z1g)
                                     # print(i, m_oset[i][2] + z0g, m_oset[i][2] + z1g, m_tiles[i][: x1[i] - x0[i], : y1[i] - y0[i], : z1g - z0g, :].max())
                                     m_tiles[i][:] = 0
@@ -679,28 +681,28 @@ class NgDataset(object):
                                 ii for ii in mip_levels if ii >= m_mip_id
                             ]:
                                 if (zz + 1) % (
-                                    m_zres[i] * self.chunk_size[2]
-                                ) == 0 or zz == m_size[0][2] - 1:
-                                    z1g = (zz + 1 + m_zres[i] - 1) // m_zres[i]
+                                    (m_zres[i]//m_zres[0]) * self.chunk_size[2]
+                                ) == 0 or zz == m_size[0][2]*(m_zres[0]//m_zres[0]) - 1:
+                                    z1g = (zz + 1 + (m_zres[i]//m_zres[0]) - 1) // (m_zres[i]//m_zres[0])
                                     z0g = z1g - self.chunk_size[2]
-                                    if (zz + 1) % (
-                                        m_zres[i] * self.chunk_size[2]
-                                    ) != 0:  # last unfilled chunk
+                                    if z1g % self.chunk_size[2] != 0:  # last unfilled chunk
                                         z0g = (
                                             z1g // self.chunk_size[2]
                                         ) * self.chunk_size[2]
-                                    if (
-                                        m_tiles[i][:, :, : z1g - z0g, :].max()
+                                    if (m_tiles[i][:, :, : z1g - z0g, :].max()
                                         > 0
                                     ):
-                                        m_vols[i][
-                                            m_oset[i][0] :,
-                                            m_oset[i][1] :,
-                                            z0g
-                                            + m_oset[i][2] : z1g
-                                            + m_oset[i][2],
-                                            :,
-                                        ] = m_tiles[i][:, :, : z1g - z0g, :]
+                                        try:
+                                            m_vols[i][
+                                                m_oset[i][0] :,
+                                                m_oset[i][1] :,
+                                                z0g
+                                                + m_oset[i][2] : z1g
+                                                + m_oset[i][2],
+                                                :,
+                                            ] = m_tiles[i][:, :, : z1g - z0g, :]
+                                        except:
+                                            import pdb;pdb.set_trace()
                                         m_tiles[i][:] = 0
 
     def create_mesh(
