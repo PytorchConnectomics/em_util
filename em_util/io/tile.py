@@ -41,7 +41,7 @@ def read_tiles_image(pattern, row_ran, col_ran, image_type='image', image_dtype=
                     read_image(get_tile_name(pattern, r, c), image_type)
     return out
 
-def read_slice_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, slice_dtype=np.uint8, slice_ratio=1, slice_resize_order=1, volume_sz=None, zstep=1):
+def read_slice_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, image_type='image', slice_dtype=np.uint8, slice_ratio=1, slice_resize_order=1, volume_sz=None, zstep=1):
     """
     Read and assemble a volume from a set of sliced volumes.
 
@@ -78,7 +78,7 @@ def read_slice_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, slice_dtype=np.ui
     )
     z1 = min(len(filenames) - 1, z1)
     for i, z in enumerate(range(z0, z1, zstep)):
-        result[i] = read_vol_bbox(filenames[z], [y0,y1,x0,x1], ratio=slice_ratio, resize_order=slice_resize_order)
+        result[i] = read_vol_bbox(filenames[z], [y0,y1,x0,x1], ratio=slice_ratio, resize_order=slice_resize_order, image_type=image_type)
     return result
 
   
@@ -182,9 +182,10 @@ def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=N
                     x1a = min(x1, xp1)
                     y0a = max(y0, yp0)
                     y1a = min(y1, yp1)
+                    #print(i, y0a - y0, y1a - y0, x0a - x0, x1a - x0)
                     result[i, y0a - y0 : y1a - y0, x0a - x0 : x1a - x0] = (
                             patch[y0a - yp0 : y1a - yp0, x0a - xp0 : x1a - xp0]
-                    )                    
+                    )
                 else:
                     print(f"Non-exist: {filename}")
     # blank case

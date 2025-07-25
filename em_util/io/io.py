@@ -36,7 +36,7 @@ def mkdir(foldername, opt=""):
 def resize_image(image, ratio=None, resize_order=0):
     if ratio is None or (np.array(ratio)==1).all():
         return image
-    return zoom(image, ratio, order=resize_order)
+    return zoom(image, ratio, order=resize_order, mode='reflect')
 
 def read_image(filename, image_type="image", ratio=None, resize_order=None, data_type="2d", crop=None):
     """
@@ -67,10 +67,10 @@ def read_image(filename, image_type="image", ratio=None, resize_order=None, data
                 if resize_order is None:
                     resize_order = 0 if image_type == "seg" else 1
                 if image.ndim == 2:
-                    image = zoom(image, ratio, order=resize_order)
+                    image = zoom(image, ratio, order=resize_order, mode='reflect')
                 else:
                     # do not zoom the color channel
-                    image = zoom(image, ratio + [1], order=resize_order)
+                    image = zoom(image, ratio + [1], order=resize_order, mode='reflect')
         if crop is not None:
             image = image[crop[0]: crop[1], crop[2]: crop[3]]
     else:
@@ -80,7 +80,7 @@ def read_image(filename, image_type="image", ratio=None, resize_order=None, data
             assert (
                 str(ratio).isnumeric() or len(ratio) == image.ndim
             ), f"ratio's dim {len(ratio)} is not equal to image's dim {image.ndim}"
-            image = zoom(image, ratio, order=resize_order)
+            image = zoom(image, ratio, order=resize_order, mode='reflect')
         if crop is not None:
             obj = tuple(slice(crop[x*2], crop[x*2+1]) for x in range(image.ndim))
             image = image[obj]
@@ -138,13 +138,15 @@ def write_image_folder(
 
 
    
-def read_vol_bbox(filename, bbox, dataset=None, ratio=1, resize_order=0):   
+def read_vol_bbox(filename, bbox, dataset=None, ratio=1, resize_order=0, image_type='image'):   
     if '.h5' in filename:
         fid = h5py.File(filename, 'r')
         dataset = fid.keys() if sys.version[0] == "2" else list(fid)
         result = fid[dataset[0]]
     else:
         result = read_vol(filename,dataset)
+    if image_type=='seg': 
+        result = rgb_to_seg(result)
 
     if result.ndim == 2:
         result = result[bbox[0]:bbox[1], bbox[2]:bbox[3]]
@@ -175,8 +177,10 @@ def read_vol(filename, dataset=None):
         out = np.load(filename)
     elif filename[-3:] == "pkl":
         out = read_pkl(filename)
-    elif filename[-3:] in ["tif", "iff"]:
+    elif filename[-4:] in [".tif", "tiff"]:
         out = read_image(filename, data_type="nd")
+    elif filename[-4:] in [".png", '.jpg','jepg']:
+        out = read_image(filename)
     elif filename[-2:] == "h5":
         out = read_h5(filename, dataset)
     elif filename[-3:] == "zip":
