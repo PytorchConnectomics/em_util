@@ -240,5 +240,5 @@ def vast_meta_relabel(
         while u0 != rl[u0]:
             rl[rl == u0] = rl[u0]
             u0 = rl[u0]
-        print(u, rl)
+        #print(u, rl)
     return rl
