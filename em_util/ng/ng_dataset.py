@@ -640,7 +640,8 @@ class NgDataset(object):
                             ) == 0 or (z == num_chunk[2] - 1) * (zz == z1 - 1):
                                 # take the ceil for the last chunk
                                 z1g = (zz + 1 + (m_zres[i]//m_zres[0]) - 1) // (m_zres[i]//m_zres[0])
-                                z0g = z1g - self.chunk_size[2]
+                                #z0g = z1g - self.chunk_size[2]
+                                z0g = ((z1g - 1) //self.chunk_size[2]) * self.chunk_size[2]
                                 # check volume align
                                 if (
                                     m_tiles[i][
