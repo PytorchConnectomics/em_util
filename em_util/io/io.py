@@ -273,7 +273,7 @@ def read_h5(filename, dataset=None):
         dataset = fid.keys() if sys.version[0] == "2" else list(fid)
     else:
         if not isinstance(dataset, list):
-            dataset = list(dataset)
+            dataset = [dataset]
 
     out = [None] * len(dataset)
     for di, d in enumerate(dataset):
