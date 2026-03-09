@@ -95,3 +95,56 @@ def im_adjust(I, threshold=None, auto_scale=None):
             # convert it to uint8
             I = (I * 255).astype(np.uint8)
     return I
+
+
+class CLAHE:
+    """Reusable CLAHE (Contrast Limited Adaptive Histogram Equalization) wrapper.
+
+    Create once with desired parameters, then apply to multiple images.
+
+    Args:
+        clip_limit (float): Threshold for contrast limiting. Default: 2.0.
+        tile_grid_size (tuple): Size of grid for histogram equalization. Default: (8, 8).
+
+    Example:
+        clahe = CLAHE(clip_limit=3.0, tile_grid_size=(8, 8))
+        result1 = clahe(image1)
+        result2 = clahe(image2)
+    """
+
+    def __init__(self, clip_limit=2.0, tile_grid_size=(8, 8)):
+        import cv2
+        self.clahe = cv2.createCLAHE(
+            clipLimit=clip_limit, tileGridSize=tile_grid_size
+        )
+
+    def __call__(self, image):
+        """Apply CLAHE to an image.
+
+        Args:
+            image (numpy.ndarray): 2D grayscale or 3D volume (applied per-slice along axis 0).
+
+        Returns:
+            numpy.ndarray: CLAHE-enhanced image with same shape and dtype.
+        """
+        if image.ndim == 2:
+            return self._apply_2d(image)
+        elif image.ndim == 3:
+            return np.stack([self._apply_2d(image[z]) for z in range(image.shape[0])])
+        else:
+            raise ValueError(f"Expected 2D or 3D array, got {image.ndim}D")
+
+    def _apply_2d(self, image):
+        orig_dtype = image.dtype
+        if image.dtype != np.uint8:
+            img_min, img_max = image.min(), image.max()
+            if img_max > img_min:
+                image_u8 = ((image.astype(np.float64) - img_min) / (img_max - img_min) * 255).astype(np.uint8)
+            else:
+                image_u8 = np.zeros_like(image, dtype=np.uint8)
+            result_u8 = self.clahe.apply(image_u8)
+            if orig_dtype != np.uint8:
+                result = (result_u8.astype(np.float64) / 255 * (img_max - img_min) + img_min).astype(orig_dtype)
+                return result
+            return result_u8
+        return self.clahe.apply(image)
