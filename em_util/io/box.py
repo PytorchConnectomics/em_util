@@ -145,8 +145,6 @@ def compute_bbox_all_3d(seg, do_count=False, uid=None):
     if uid is None:
         uid = np.unique(seg)
         uid = uid[uid > 0]
-    uid_max = int(uid.max())
-
     sid_dict = dict(zip(uid, range(len(uid))))
     out = np.zeros((len(uid), 7 + do_count), dtype=int)
     out[:, 0] = uid
@@ -161,7 +159,7 @@ def compute_bbox_all_3d(seg, do_count=False, uid=None):
     zids = np.where((seg > 0).sum(axis=1).sum(axis=1) > 0)[0]
     for zid in zids:
         sid = np.unique(seg[zid])
-        sid = sid[(sid > 0) * (sid <= uid_max)]
+        sid = sid[(sid > 0) & np.isin(sid, uid)]
         sid_ind = [sid_dict[x] for x in sid]
         out[sid_ind, 1] = np.minimum(out[sid_ind, 1], zid)
         out[sid_ind, 2] = np.maximum(out[sid_ind, 2], zid)
@@ -170,7 +168,7 @@ def compute_bbox_all_3d(seg, do_count=False, uid=None):
     rids = np.where((seg > 0).sum(axis=0).sum(axis=1) > 0)[0]
     for rid in rids:
         sid = np.unique(seg[:, rid])
-        sid = sid[(sid > 0) * (sid <= uid_max)]
+        sid = sid[(sid > 0) & np.isin(sid, uid)]
         sid_ind = [sid_dict[x] for x in sid]
         out[sid_ind, 3] = np.minimum(out[sid_ind, 3], rid)
         out[sid_ind, 4] = np.maximum(out[sid_ind, 4], rid)
@@ -179,7 +177,7 @@ def compute_bbox_all_3d(seg, do_count=False, uid=None):
     cids = np.where((seg > 0).sum(axis=0).sum(axis=0) > 0)[0]
     for cid in cids:
         sid = np.unique(seg[:, :, cid])
-        sid = sid[(sid > 0) * (sid <= uid_max)]
+        sid = sid[(sid > 0) & np.isin(sid, uid)]
         sid_ind = [sid_dict[x] for x in sid]
         out[sid_ind, 5] = np.minimum(out[sid_ind, 5], cid)
         out[sid_ind, 6] = np.maximum(out[sid_ind, 6], cid)
