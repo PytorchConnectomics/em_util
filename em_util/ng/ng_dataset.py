@@ -730,7 +730,6 @@ class NgDataset(object):
             object_ids=object_ids,
             dust_threshold=20,
             max_simplification_error=40,
-            do_subdir=do_subdir,
         )
         tq.insert(tasks)
         tq.execute()
